@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/service-provider': {
-        target: 'http://localhost:8080',
+        target: "https://pjsofttech.in:9090",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path, // Keep the path as is
