@@ -48,7 +48,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import LanguageIcon from "@mui/icons-material/Language";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import { styled } from "@mui/material/styles";
-import { api } from "../services/api";
+
 
 // ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
 const PageContainer = styled(Box)(({ theme }) => ({

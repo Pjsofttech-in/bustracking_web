@@ -36,7 +36,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { styled } from "@mui/material/styles";
-import { api } from "../services/api";
+
 
 // ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
 const PageContainer = styled(Box)(({ theme }) => ({

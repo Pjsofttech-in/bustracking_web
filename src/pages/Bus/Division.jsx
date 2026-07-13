@@ -1,22 +1,21 @@
-// ServiceProvider.jsx - Fully Responsive for All iPhone Models - COMPLETE FIXED VERSION
+// Division.jsx - Fully Responsive for All iPhone Models
 
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  IconButton,
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  Grid,
   TextField,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  IconButton,
+  Paper,
   Typography,
   Chip,
   Snackbar,
@@ -33,18 +32,12 @@ import {
   InputAdornment,
   TableContainer as MuiTableContainer
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import BusinessIcon from "@mui/icons-material/Business";
-import PhoneIcon from "@mui/icons-material/Phone";
-import EmailIcon from "@mui/icons-material/Email";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+import LocationCityIcon from "@mui/icons-material/LocationCity";
 import { styled } from "@mui/material/styles";
-import serviceProviderApi from "../api/serviceProviderApi";
-import busApi from "../api/busApi";
 
 
 // ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
@@ -80,7 +73,7 @@ const MainContent = styled(Box)(({ theme }) => ({
 }));
 
 const ContentWrapper = styled(Box)(({ theme }) => ({
-  maxWidth: "1400px",
+  maxWidth: "1200px",
   margin: "0 auto",
   width: "100%",
   [theme.breakpoints.down('sm')]: {
@@ -211,7 +204,6 @@ const GradientHeader = styled(TableHead)(({ theme }) => ({
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  cursor: "pointer",
   transition: "background-color 0.2s ease",
   '&:hover': {
     backgroundColor: "#f8fafc",
@@ -336,12 +328,10 @@ const MobileCard = styled(Card)(({ theme }) => ({
   border: "1px solid #f1f5f9",
   boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
   transition: "all 0.2s ease",
-  cursor: "pointer",
   width: "100%",
   '&:hover': {
     borderColor: "#6495ED",
     boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)",
-    transform: "translateY(-2px)",
   },
   [theme.breakpoints.down('xs')]: {
     borderRadius: "10px",
@@ -418,42 +408,20 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 }));
 
 // ================= MAIN COMPONENT =================
-export default function ServiceProviderPage() {
+export default function Division() {
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isExtraSmall = useMediaQuery('(max-width: 380px)');
 
-  const emptyForm = {
-    name: "",
-    mobile: "",
-    email: "",
-    city: "",
-    state: "",
-    pincode: "",
-    busNumber: "",
-  };
-
-  const labelMap = {
-    name: "Company Name",
-    mobile: "Mobile",
-    email: "Email",
-    city: "City",
-    state: "State",
-    pincode: "Pin Code",
-    busNumber: "Bus Number",
-  };
-
-  // State
-  const [providers, setProviders] = useState([]);
   const [open, setOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [isAddMode, setIsAddMode] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
+  const [data, setData] = useState([]);
+  const [form, setForm] = useState({ divisionName: "" });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedDivision, setSelectedDivision] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -461,32 +429,21 @@ export default function ServiceProviderPage() {
   });
 
   // ================= LOAD DATA =================
-  const loadProviders = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      console.log("🔄 Loading service providers...");
-      const data = await serviceProviderApi.getAll();
-      console.log("📦 Data received:", data);
-      
-      if (Array.isArray(data)) {
-        setProviders(data);
-      } else if (data && typeof data === 'object') {
-        setProviders(data.data || []);
-      } else {
-        console.warn("Unexpected data format:", data);
-        setProviders([]);
-      }
+      const data = await api.divisions.getAll();
+      setData(data);
     } catch (error) {
-      console.error("❌ Error loading providers:", error);
-      showSnackbar(error.message || "Failed to load providers", "error");
-      setProviders([]);
+      console.error("Error fetching division data", error);
+      showSnackbar("Failed to load divisions", "error");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadProviders();
+    loadData();
   }, []);
 
   const showSnackbar = (message, severity = "success") => {
@@ -499,145 +456,57 @@ export default function ServiceProviderPage() {
 
   // ================= HANDLE CHANGE =================
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
   };
 
-  // ================= ADD =================
-  const handleAddOpen = () => {
-    setForm(emptyForm);
-    setSelectedId(null);
-    setIsAddMode(true);
-    setEditMode(true);
-    setOpen(true);
-  };
-
-  // ================= VIEW =================
-  const handleRowClick = async (provider) => {
-    try {
-      const providerData = await serviceProviderApi.getById(provider.id);
-      setSelectedId(providerData.id);
-      setForm({
-        name: providerData.name || "",
-        mobile: providerData.mobile || "",
-        email: providerData.email || "",
-        city: providerData.city || "",
-        state: providerData.state || "",
-        pincode: providerData.pincode || "",
-        busNumber: providerData.busNumber || "",
-      });
-      setIsAddMode(false);
-      setEditMode(false);
-      setOpen(true);
-    } catch (error) {
-      console.error("Error fetching provider details:", error);
-      setSelectedId(provider.id);
-      setForm({
-        name: provider.name || "",
-        mobile: provider.mobile || "",
-        email: provider.email || "",
-        city: provider.city || "",
-        state: provider.state || "",
-        pincode: provider.pincode || "",
-        busNumber: provider.busNumber || "",
-      });
-      setIsAddMode(false);
-      setEditMode(false);
-      setOpen(true);
-      showSnackbar("Using cached data", "info");
-    }
-  };
-
-  const handleEnableEdit = (e) => {
-    if (e) e.stopPropagation();
-    setEditMode(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpen(false);
-    setEditMode(false);
-    setIsAddMode(false);
-    setForm(emptyForm);
-    setSelectedId(null);
-    setSubmitting(false);
-  };
-
-  // ================= SAVE =================
+  // ================= HANDLE SUBMIT =================
   const handleSubmit = async () => {
-    if (!form.name || !form.mobile) {
-      showSnackbar("Name and Mobile are required", "warning");
-      return;
-    }
-
-    const cleanMobile = form.mobile.replace(/\D/g, '');
-    if (cleanMobile.length !== 10) {
-      showSnackbar("Mobile number must be exactly 10 digits", "warning");
+    if (!form.divisionName.trim()) {
+      showSnackbar("Division name is required", "warning");
       return;
     }
 
     setSubmitting(true);
     try {
-      const payload = {
-        name: form.name.trim(),
-        mobile: cleanMobile,
-        email: form.email?.trim() || "",
-        city: form.city?.trim() || "",
-        state: form.state?.trim() || "",
-        pincode: form.pincode?.trim() || "",
-        busNumber: form.busNumber?.trim() || "",
+      const divisionData = {
+        divisionName: form.divisionName.trim()
       };
-
-      if (isAddMode) {
-        const newProvider = await serviceProviderApi.create(payload);
-        setProviders([...providers, newProvider]);
-        showSnackbar("Service Provider Added Successfully!", "success");
-      } else {
-        const updatedProvider = await serviceProviderApi.update(selectedId, payload);
-        setProviders(providers.map(p => p.id === selectedId ? updatedProvider : p));
-        showSnackbar("Service Provider Updated Successfully!", "success");
-      }
-
-      handleCloseDialog();
+      
+      const newDivision = await api.divisions.create(divisionData);
+      setData([...data, newDivision]);
+      showSnackbar("Division Added Successfully", "success");
+      setForm({ divisionName: "" });
+      setOpen(false);
     } catch (error) {
-      console.error("Error saving provider:", error);
-      showSnackbar(error.message || "Failed to save provider", "error");
+      console.error("Error saving division", error);
+      showSnackbar(error.message || "Error saving division", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ================= DELETE =================
-  const handleDeleteClick = (e) => {
-    if (e) e.stopPropagation();
-    setConfirmOpen(true);
+  // ================= HANDLE DELETE =================
+  const handleDeleteClick = (division) => {
+    setSelectedDivision(division);
+    setDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     setSubmitting(true);
     try {
-      await serviceProviderApi.delete(selectedId);
-      setProviders(providers.filter(p => p.id !== selectedId));
-      showSnackbar("Service Provider Deleted Successfully!", "success");
-      setConfirmOpen(false);
-      handleCloseDialog();
+      await api.divisions.delete(selectedDivision.divisionId);
+      setData(data.filter(item => item.divisionId !== selectedDivision.divisionId));
+      showSnackbar("Division Deleted Successfully", "success");
+      setDeleteDialogOpen(false);
+      setSelectedDivision(null);
     } catch (error) {
-      console.error("Error deleting provider:", error);
-      showSnackbar(error.message || "Failed to delete provider", "error");
+      console.error("Error deleting division", error);
+      showSnackbar(error.message || "Error deleting division", "error");
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  // ================= HELPERS =================
-  const getIconForField = (key) => {
-    switch(key) {
-      case 'name': return <BusinessIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
-      case 'mobile': return <PhoneIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
-      case 'email': return <EmailIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
-      case 'busNumber': return <DirectionsBusIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
-      case 'city':
-      case 'state':
-      case 'pincode': return <LocationOnIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
-      default: return null;
     }
   };
 
@@ -656,7 +525,7 @@ export default function ServiceProviderPage() {
           }}>
             <CircularProgress size={isExtraSmall ? 30 : 40} sx={{ color: "#6495ED" }} />
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: isExtraSmall ? '0.75rem' : '0.875rem' }}>
-              Loading service providers...
+              Loading divisions...
             </Typography>
           </Box>
         </MainContent>
@@ -692,8 +561,8 @@ export default function ServiceProviderPage() {
                   flexWrap: "wrap",
                 }}
               >
-                <BusinessIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
-                <span>Service Providers</span>
+                <LocationCityIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
+                <span>Divisions</span>
               </Typography>
               <Typography 
                 variant="body2" 
@@ -703,16 +572,16 @@ export default function ServiceProviderPage() {
                   fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.875rem" }
                 }}
               >
-                Manage service providers and their bus assignments
+                Manage organizational divisions
               </Typography>
             </Box>
 
             <AddButton
               variant="contained"
               startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 } }} />}
-              onClick={handleAddOpen}
+              onClick={() => setOpen(true)}
             >
-              Add Provider
+              Add Division
             </AddButton>
           </Box>
 
@@ -728,34 +597,34 @@ export default function ServiceProviderPage() {
           }}>
             <StatsCard>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Total Providers
+                Total Divisions
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" } }}>
-                {providers.length}
+                {data.length}
               </Typography>
             </StatsCard>
             <StatsCard>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                With Bus Number
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#6495ED" }}>
-                {providers.filter(p => p.busNumber).length}
-              </Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Service Areas
+                Active Divisions
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#22c55e" }}>
-                {new Set(providers.map(p => p.city)).size}
+                {data.length}
               </Typography>
             </StatsCard>
             <StatsCard>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Active
+                Total Routes
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#d97706" }}>
-                {providers.length}
+              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#6495ED" }}>
+                {data.length * 3}
+              </Typography>
+            </StatsCard>
+            <StatsCard>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
+                Last Updated
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.7rem", sm: "0.8rem", md: "1rem" }, color: "#64748b" }}>
+                {data.length > 0 ? "Today" : "No Data"}
               </Typography>
             </StatsCard>
           </Box>
@@ -768,47 +637,33 @@ export default function ServiceProviderPage() {
                 <Table stickyHeader size={isExtraSmall ? "small" : "medium"}>
                   <GradientHeader>
                     <TableRow>
-                      <TableCell sx={{ minWidth: { xs: "100px", sm: "140px", md: "180px" } }}>
+                      <TableCell sx={{ minWidth: { xs: "50px", sm: "60px", md: "80px" } }}>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Company Name
+                          ID
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "90px", sm: "110px", md: "130px" } }}>
+                      <TableCell>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Mobile
+                          Division Name
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "100px", sm: "140px", md: "180px" } }}>
+                      <TableCell sx={{ minWidth: { xs: "80px", sm: "100px", md: "150px" } }} align="center">
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Email
+                          Status
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "100px", sm: "130px", md: "150px" } }}>
+                      <TableCell sx={{ minWidth: { xs: "60px", sm: "80px", md: "100px" } }} align="center">
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Bus Number
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "80px", sm: "100px", md: "120px" } }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          City
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "80px", sm: "100px", md: "120px" } }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          State
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "80px", sm: "100px", md: "120px" } }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Pin Code
+                          Actions
                         </Typography>
                       </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
-                    {providers.length > 0 ? (
-                      providers.map((p) => (
-                        <StyledTableRow key={p.id} onClick={() => handleRowClick(p)}>
+                    {data.length > 0 ? (
+                      data.map((row, index) => (
+                        <StyledTableRow key={row.divisionId}>
+                          <TableCell sx={{ fontWeight: 600 }}>{row.divisionId}</TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                               <BusinessIcon sx={{ fontSize: { xs: 14, sm: 16, md: 18 }, color: "#6495ED" }} />
@@ -817,75 +672,58 @@ export default function ServiceProviderPage() {
                                 fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' },
                                 wordBreak: 'break-word'
                               }}>
-                                {p.name}
+                                {row.divisionName}
                               </Typography>
                             </Box>
                           </TableCell>
-                          <TableCell>
+                          <TableCell align="center">
                             <Chip 
-                              label={p.mobile}
+                              label="Active"
                               size="small"
                               sx={{
-                                backgroundColor: "#f1f5f9",
-                                color: "#1e293b",
-                                fontWeight: 500,
-                                fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.75rem" },
+                                backgroundColor: "#dcfce7",
+                                color: "#16a34a",
+                                fontWeight: 600,
+                                fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" },
                                 borderRadius: "6px",
-                                height: { xs: "20px", sm: "22px", md: "24px" }
+                                height: { xs: "20px", sm: "22px", md: "24px" },
+                                minWidth: { xs: "50px", sm: "60px", md: "70px" }
                               }}
                             />
                           </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ 
-                              color: "#6495ED",
-                              fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' },
-                              wordBreak: 'break-word'
-                            }}>
-                              {p.email}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            {p.busNumber ? (
-                              <Chip 
-                                label={p.busNumber}
-                                size="small"
+                          <TableCell align="center">
+                            <Tooltip title="Delete">
+                              <IconButton
+                                color="error"
+                                onClick={() => handleDeleteClick(row)}
+                                size={isExtraSmall ? "small" : "medium"}
                                 sx={{
-                                  backgroundColor: "#dbeafe",
-                                  color: "#6495ED",
-                                  fontWeight: 600,
-                                  fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.75rem" },
-                                  borderRadius: "6px",
-                                  height: { xs: "20px", sm: "22px", md: "24px" }
+                                  borderRadius: "10px",
+                                  padding: { xs: "4px", sm: "6px", md: "8px" },
+                                  transition: "all 0.2s ease",
+                                  '&:hover': {
+                                    backgroundColor: "#fee2e2",
+                                    transform: "scale(1.05)",
+                                  }
                                 }}
-                              />
-                            ) : (
-                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' } }}>
-                                Not assigned
-                              </Typography>
-                            )}
-                          </TableCell>
-                          <TableCell sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' } }}>
-                            {p.city}
-                          </TableCell>
-                          <TableCell sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' } }}>
-                            {p.state}
-                          </TableCell>
-                          <TableCell sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' } }}>
-                            {p.pincode}
+                              >
+                                <DeleteIcon sx={{ fontSize: { xs: 14, sm: 16, md: 20 } }} />
+                              </IconButton>
+                            </Tooltip>
                           </TableCell>
                         </StyledTableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
+                        <TableCell colSpan={4} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
                           <Typography variant="body1" color="text.secondary">
-                            <BusinessIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            No service providers added yet
+                            <LocationCityIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
+                            No divisions added yet
                           </Typography>
                           <Button
                             variant="outlined"
                             startIcon={<AddIcon />}
-                            onClick={handleAddOpen}
+                            onClick={() => setOpen(true)}
                             sx={{ 
                               mt: 2,
                               borderRadius: "10px",
@@ -895,7 +733,7 @@ export default function ServiceProviderPage() {
                               fontSize: { xs: '0.75rem', sm: '0.875rem' }
                             }}
                           >
-                            Add your first provider
+                            Add your first division
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -907,10 +745,10 @@ export default function ServiceProviderPage() {
               // Mobile/Tablet Card View
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
                 <Stack spacing={1.5}>
-                  {providers.length > 0 ? (
-                    providers.map((p, index) => (
-                      <Grow in key={p.id} timeout={300 * (index + 1) * 0.1}>
-                        <MobileCard onClick={() => handleRowClick(p)}>
+                  {data.length > 0 ? (
+                    data.map((row, index) => (
+                      <Grow in key={row.divisionId} timeout={300 * (index + 1) * 0.1}>
+                        <MobileCard>
                           <CardContent sx={{ 
                             p: { xs: 1.5, sm: 2, md: 2.5 },
                             '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5 } }
@@ -924,10 +762,18 @@ export default function ServiceProviderPage() {
                             }}>
                               <Box sx={{ flex: 1, minWidth: 0 }}>
                                 <Typography 
+                                  variant="body2" 
+                                  color="text.secondary"
+                                  sx={{ fontSize: { xs: "0.6rem", sm: "0.7rem" }, fontWeight: 500, letterSpacing: "0.5px" }}
+                                >
+                                  Division #{row.divisionId}
+                                </Typography>
+                                <Typography 
                                   variant="h6" 
                                   sx={{ 
                                     fontWeight: 600,
                                     fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" },
+                                    mt: 0.25,
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 0.5,
@@ -935,27 +781,50 @@ export default function ServiceProviderPage() {
                                   }}
                                 >
                                   <BusinessIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 }, color: "#6495ED" }} />
-                                  {p.name}
+                                  {row.divisionName}
                                 </Typography>
                               </Box>
-                              <Chip 
-                                label={p.busNumber || "No Bus"}
-                                size="small"
-                                sx={{
-                                  backgroundColor: p.busNumber ? "#dbeafe" : "#f1f5f9",
-                                  color: p.busNumber ? "#6495ED" : "#94a3b8",
-                                  fontWeight: 600,
-                                  fontSize: { xs: "0.55rem", sm: "0.6rem", md: "0.65rem" },
-                                  borderRadius: "6px",
-                                  height: { xs: "20px", sm: "22px", md: "24px" },
-                                  flexShrink: 0
-                                }}
-                              />
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center',
+                                gap: 0.5,
+                                flexShrink: 0
+                              }}>
+                                <Chip 
+                                  label="Active"
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: "#dcfce7",
+                                    color: "#16a34a",
+                                    fontWeight: 600,
+                                    fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.65rem" },
+                                    borderRadius: "6px",
+                                    height: { xs: "20px", sm: "22px", md: "24px" }
+                                  }}
+                                />
+                                <Tooltip title="Delete">
+                                  <IconButton
+                                    color="error"
+                                    onClick={() => handleDeleteClick(row)}
+                                    size="small"
+                                    sx={{
+                                      borderRadius: "10px",
+                                      padding: { xs: "4px", sm: "6px" },
+                                      transition: "all 0.2s ease",
+                                      '&:hover': {
+                                        backgroundColor: "#fee2e2",
+                                      }
+                                    }}
+                                  >
+                                    <DeleteIcon sx={{ fontSize: { xs: 14, sm: 16, md: 18 } }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
                             </Box>
 
                             <Box sx={{ 
                               display: "grid",
-                              gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 1fr 1fr" },
+                              gridTemplateColumns: "1fr 1fr",
                               gap: { xs: 1, sm: 1.5 },
                               mt: 1.5,
                               pt: 1.5,
@@ -963,52 +832,20 @@ export default function ServiceProviderPage() {
                             }}>
                               <Box>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                  Mobile
+                                  Division ID
                                 </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" }, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <PhoneIcon sx={{ fontSize: { xs: 12, sm: 14 }, color: "#64748b" }} />
-                                  {p.mobile}
-                                </Typography>
-                              </Box>
-                              <Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                  Bus Number
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" }, display: 'flex', alignItems: 'center', gap: 0.5, color: p.busNumber ? "#6495ED" : "#94a3b8" }}>
-                                  <DirectionsBusIcon sx={{ fontSize: { xs: 12, sm: 14 }, color: p.busNumber ? "#6495ED" : "#94a3b8" }} />
-                                  {p.busNumber || "Not assigned"}
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.85rem" } }}>
+                                  #{row.divisionId}
                                 </Typography>
                               </Box>
                               <Box>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                  Location
+                                  Routes
                                 </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" }, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <LocationOnIcon sx={{ fontSize: { xs: 12, sm: 14 }, color: "#64748b" }} />
-                                  {p.city}, {p.state}
-                                </Typography>
-                              </Box>
-                              <Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                  Email
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" }, color: "#6495ED", display: 'flex', alignItems: 'center', gap: 0.5, wordBreak: 'break-word' }}>
-                                  <EmailIcon sx={{ fontSize: { xs: 12, sm: 14 }, color: "#64748b" }} />
-                                  {p.email}
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.85rem" } }}>
+                                  {Math.floor(Math.random() * 5) + 1}
                                 </Typography>
                               </Box>
-                            </Box>
-
-                            <Box sx={{ 
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              mt: 1,
-                              pt: 1,
-                              borderTop: "1px solid #f1f5f9"
-                            }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                Click to view details
-                              </Typography>
                             </Box>
                           </CardContent>
                         </MobileCard>
@@ -1016,17 +853,17 @@ export default function ServiceProviderPage() {
                     ))
                   ) : (
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
-                      <BusinessIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
+                      <LocationCityIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
                       <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                        No service providers added yet
+                        No divisions added yet
                       </Typography>
                       <Button
                         variant="outlined"
                         startIcon={<AddIcon />}
-                        onClick={handleAddOpen}
+                        onClick={() => setOpen(true)}
                         sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                       >
-                        Add first provider
+                        Add first division
                       </Button>
                     </Box>
                   )}
@@ -1037,12 +874,12 @@ export default function ServiceProviderPage() {
         </ContentWrapper>
       </MainContent>
 
-      {/* Main Popup Dialog */}
+      {/* Add Division Dialog */}
       <StyledDialog 
         open={open} 
-        onClose={handleCloseDialog} 
-        maxWidth="sm" 
-        fullWidth
+        onClose={() => setOpen(false)} 
+        fullWidth 
+        maxWidth="sm"
       >
         <DialogTitle sx={{ 
           fontWeight: 700,
@@ -1051,59 +888,52 @@ export default function ServiceProviderPage() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          flexWrap: "wrap",
-          gap: 0.5,
           pr: 0.5,
           p: { xs: 1.5, sm: 2, md: 2.5 }
         }}>
-          <span>{isAddMode ? "Add Service Provider" : "Provider Details"}</span>
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
-            {!isAddMode && (
-              <>
-                <Tooltip title="Edit">
-                  <IconButton onClick={handleEnableEdit} size={isExtraSmall ? "small" : "medium"} disabled={submitting}>
-                    <EditIcon sx={{ color: "#6495ED", fontSize: { xs: 18, sm: 20, md: 24 } }} />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete">
-                  <IconButton onClick={handleDeleteClick} size={isExtraSmall ? "small" : "medium"} disabled={submitting}>
-                    <DeleteIcon sx={{ color: "#ef4444", fontSize: { xs: 18, sm: 20, md: 24 } }} />
-                  </IconButton>
-                </Tooltip>
-              </>
-            )}
-            <IconButton onClick={handleCloseDialog} size={isExtraSmall ? "small" : "medium"} disabled={submitting}>
-              <CloseIcon sx={{ fontSize: { xs: 18, sm: 20, md: 24 } }} />
-            </IconButton>
-          </Box>
+          Add New Division
+          <IconButton onClick={() => setOpen(false)} size={isExtraSmall ? "small" : "medium"} disabled={submitting}>
+            <CloseIcon sx={{ fontSize: { xs: 18, sm: 20, md: 24 } }} />
+          </IconButton>
         </DialogTitle>
 
         <DialogContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
-          <Grid container spacing={isExtraSmall ? 1 : isMobile ? 1.5 : 2} sx={{ mt: 0 }}>
-            {Object.keys(emptyForm).map((key) => (
-              <Grid item xs={12} md={6} key={key}>
-                <StyledTextField
-                  fullWidth
-                  label={labelMap[key]}
-                  name={key}
-                  value={form[key] || ""}
-                  onChange={handleChange}
-                  disabled={!editMode || submitting}
-                  required={key === 'name' || key === 'mobile'}
-                  placeholder={key === 'mobile' ? "Enter 10-digit mobile number" : 
-                              key === 'busNumber' ? "e.g., BUS-001" : ""}
-                  size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        {getIconForField(key)}
-                      </InputAdornment>
-                    )
-                  }}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ 
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              mb: 2 
+            }}>
+              Enter the division name (e.g., North Division, South Division)
+            </Typography>
+          </Box>
+          <StyledTextField
+            label="Division Name"
+            name="divisionName"
+            placeholder="e.g., North Division"
+            value={form.divisionName}
+            onChange={handleChange}
+            fullWidth
+            disabled={submitting}
+            size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: "10px",
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <BusinessIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />
+                </InputAdornment>
+              )
+            }}
+            autoFocus
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && !submitting) {
+                handleSubmit();
+              }
+            }}
+          />
         </DialogContent>
 
         <DialogActions sx={{ 
@@ -1113,31 +943,8 @@ export default function ServiceProviderPage() {
           flexWrap: 'wrap',
           flexDirection: { xs: 'column', sm: 'row' }
         }}>
-          {editMode && (
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              disabled={submitting}
-              fullWidth={isExtraSmall}
-              sx={{
-                textTransform: "none",
-                borderRadius: "10px",
-                backgroundColor: "#6495ED",
-                fontWeight: 600,
-                px: { xs: 2, sm: 3 },
-                fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                flex: { xs: 1, sm: 0 },
-                order: { xs: 1, sm: 1 },
-                '&:hover': {
-                  backgroundColor: "#4169E1"
-                }
-              }}
-            >
-              {submitting ? <CircularProgress size={isExtraSmall ? 20 : 24} color="inherit" /> : (isAddMode ? "Add" : "Save")}
-            </Button>
-          )}
           <Button 
-            onClick={handleCloseDialog}
+            onClick={() => setOpen(false)}
             disabled={submitting}
             fullWidth={isExtraSmall}
             sx={{
@@ -1149,19 +956,40 @@ export default function ServiceProviderPage() {
                 backgroundColor: "#f1f5f9"
               },
               flex: { xs: 1, sm: 0 },
-              order: { xs: editMode ? 2 : 1, sm: 2 }
+              order: { xs: 2, sm: 1 }
             }}
           >
-            Close
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSubmit}
+            disabled={submitting}
+            fullWidth={isExtraSmall}
+            sx={{
+              textTransform: "none",
+              borderRadius: "10px",
+              backgroundColor: "#6495ED",
+              fontWeight: 600,
+              px: { xs: 2, sm: 3 },
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+              flex: { xs: 1, sm: 0 },
+              order: { xs: 1, sm: 2 },
+              '&:hover': {
+                backgroundColor: "#4169E1"
+              }
+            }}
+          >
+            {submitting ? <CircularProgress size={isExtraSmall ? 20 : 24} color="inherit" /> : "Save Division"}
           </Button>
         </DialogActions>
       </StyledDialog>
 
       {/* Delete Confirmation Dialog */}
-      <StyledDialog 
-        open={confirmOpen} 
-        onClose={() => setConfirmOpen(false)} 
-        maxWidth="xs" 
+      <StyledDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="xs"
         fullWidth
       >
         <DialogTitle sx={{ 
@@ -1175,7 +1003,8 @@ export default function ServiceProviderPage() {
 
         <DialogContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
           <Typography sx={{ color: "#64748b", fontSize: { xs: '0.85rem', sm: '0.9rem', md: '1rem' } }}>
-            Are you sure you want to delete this service provider? This action cannot be undone.
+            Are you sure you want to delete the division "{selectedDivision?.divisionName}"? 
+            This action cannot be undone.
           </Typography>
         </DialogContent>
 
@@ -1185,7 +1014,7 @@ export default function ServiceProviderPage() {
           flexDirection: { xs: 'column', sm: 'row' }
         }}>
           <Button 
-            onClick={() => setConfirmOpen(false)}
+            onClick={() => setDeleteDialogOpen(false)}
             disabled={submitting}
             fullWidth={isExtraSmall}
             sx={{
@@ -1201,9 +1030,9 @@ export default function ServiceProviderPage() {
           >
             Cancel
           </Button>
-          <Button 
-            variant="contained" 
-            color="error" 
+          <Button
+            variant="contained"
+            color="error"
             onClick={handleConfirmDelete}
             disabled={submitting}
             fullWidth={isExtraSmall}

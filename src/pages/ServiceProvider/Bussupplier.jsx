@@ -43,7 +43,7 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { styled } from "@mui/material/styles";
-import { api } from "../services/api";
+
 
 // ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
 const PageContainer = styled(Box)(({ theme }) => ({

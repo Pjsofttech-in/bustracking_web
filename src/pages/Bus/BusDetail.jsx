@@ -46,7 +46,7 @@ import {
 } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
-import { api } from "../services/api";
+
 
 // ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
 const PageContainer = styled(Box)(({ theme }) => ({

@@ -38,7 +38,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import LanguageIcon from "@mui/icons-material/Language";
 import TranslateIcon from "@mui/icons-material/Translate";
 import { styled } from "@mui/material/styles";
-import { api } from "../services/api";
+
 
 // ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
 const PageContainer = styled(Box)(({ theme }) => ({

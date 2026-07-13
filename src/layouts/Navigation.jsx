@@ -2,34 +2,42 @@ import React, { useState } from "react";
 import {
   Box, Paper, Tabs, Tab, Drawer,
   List, ListItemButton, ListItemText, Typography,
-  useTheme, useMediaQuery, IconButton, AppBar, Toolbar
+  useTheme, useMediaQuery, IconButton, AppBar, Toolbar,
+  Collapse, ListItemIcon
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-// import Dashboard from "../pages/Dashboard";
-import ServiceProvider from "../pages/Serviceprovider";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import Dashboard from "./Dashboard";
+import ServiceProvider from "../pages/ServiceProvider/Serviceprovider";
 import Bus from "../pages/Bus/Bus";
 import Driver from "../pages/Driver/Driver";
 import Conductor from "../pages/Conductor/Conductor";
 import Bustrip from "../pages/Bus/Bustrip";
 import Busroute from "../pages/Bus/Busroute";
 import BusStop from "../pages/Bus/BusStop";
-// import Class from "../pages/Student/Class";
-// import Division from "../pages/Division";
-// import Medium from "../pages/Student/Medium";
-// import AcademicYear from "../pages/Student/AcademicYear";
-// import StudentFee from "../pages/Student/StudentFee";
-// import StudentSignUp from "../pages/Student/StudentSignUp";
-// import SignIn from "../pages/SignIn";
-// import DriverSignUp from "../pages/Driver/DriverSignUp";
-// import ConductorSignUp from "../pages/Conductor/ConductorSignUp";
-// import BusLocation from "../pages/Bus/BusLocation";
-// import BusDetail from "../pages/Bus/BusDetail";
-// import RouteDetail from "../pages/bus/RouteDetail";
+import Class from "../pages/Student/Class";
+import Division from "../pages/Bus/Division";
+import Medium from "../pages/Student/Medium";
+import AcademicYear from "../pages/Student/AcademicYear";
+import Student from '../pages/Student/Student'
+import StudentFee from "../pages/Student/StudentFee";
+import StudentSignUp from "../pages/Student/StudentSignUp";
+import SignIn from "../pages/SignIn";
+import DriverSignUp from "../pages/Driver/DriverSignUp";
+import ConductorSignUp from "../pages/Conductor/ConductorSignUp";
+import BusLocation from "../pages/Bus/BusLocation";
+import BusDetail from "../pages/Bus/BusDetail";
+import RouteDetail from "../pages/Bus/RouteDetail";
 import RouteStop from "../pages/Bus/RouteStop";
+import BusSupplier from "../pages/ServiceProvider/Bussupplier";
 
 //--------Icons-------
 import DashboardIcon from '@mui/icons-material/Dashboard';
-
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import RouteIcon from "@mui/icons-material/Route";
+import BadgeIcon from "@mui/icons-material/Badge";
+import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
 import LoginIcon from "@mui/icons-material/Login";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PaymentIcon from "@mui/icons-material/Payment";
@@ -50,6 +58,72 @@ const miniWidth = 70;
 const fullWidth = 220;
 const FORM_GAP = 20;
 
+// ================= SETTINGS MENU DATA (HIERARCHICAL) =================
+const settingsMenuData = [
+  {
+    type: 'group',
+    key: 'serviceProviderGroup',
+    icon: <MiscellaneousServicesIcon />,
+    label: 'Service Provider',
+    children: [
+      { type: 'item', key: 'service', icon: <MiscellaneousServicesIcon />, label: 'Service Provider' },
+      { type: 'item', key: 'bussupplier', icon: <SupervisorAccountIcon />, label: 'Bus Supplier' },
+    ]
+  },
+  {
+    type: 'group',
+    key: 'busGroup',
+    icon: <DirectionsBusIcon />,
+    label: 'Bus',
+    children: [
+      { type: 'item', key: 'bus', icon: <DirectionsBusIcon />, label: 'Bus' },
+      { type: 'item', key: 'busstop', icon: <TransferWithinAStationIcon />, label: 'BusStop' },
+      { type: 'item', key: 'busroute', icon: <AltRouteIcon />, label: 'Busroute' },
+      { type: 'item', key: 'buslocation', icon: <LocationOnIcon />, label: 'Bus Location' },
+      { type: 'item', key: 'busdetail', icon: <DirectionsBusIcon />, label: 'Bus Detail' },
+      { type: 'item', key: 'routedetail', icon: <RouteIcon />, label: 'Route Detail' },
+      { type: 'item', key: 'routestop', icon: <AltRouteIcon />, label: 'Route Stop' },
+    ]
+  },
+ 
+  {
+    type: 'group',
+    key: 'driverGroup',
+    icon: <AirlineSeatReclineNormalIcon />,
+    label: 'Driver',
+    children: [
+      { type: 'item', key: 'driver', icon: <AirlineSeatReclineNormalIcon />, label: 'Driver' },
+      { type: 'item', key: 'driversignup', icon: <BadgeIcon />, label: 'Driver SignUp' },
+    ]
+  },
+  {
+    type: 'group',
+    key: 'conductorGroup',
+    icon: <PersonIcon />,
+    label: 'Conductor',
+    children: [
+      { type: 'item', key: 'conductor', icon: <PersonIcon />, label: 'Conductor' },
+      { type: 'item', key: 'conductorsignup', icon: <SupervisorAccountIcon />, label: 'Conductor SignUp' },
+    ]
+  },
+   {
+    type: 'group',
+    key: 'studentGroup',
+    icon: <ClassIcon />,
+    label: 'Student',
+    children: [
+      { type: 'item', key: 'class', icon: <ClassIcon />, label: 'Class' },
+      { type: 'item', key: 'division', icon: <GroupsIcon />, label: 'Division' },
+      { type: 'item', key: 'medium', icon: <LanguageIcon />, label: 'Medium' },
+      { type: 'item', key: 'academic', icon: <CalendarMonthIcon />, label: 'Academic Year' },
+      { type: 'item', key: 'studentfee', icon: <PaymentIcon />, label: 'Student Fee' },
+      { type: 'item', key: 'studentsignup', icon: <PersonAddIcon />, label: 'Student Sign Up' },
+    ]
+  },
+  // Flat items (any that do not belong to a group)
+  { type: 'item', key: 'signin', icon: <LoginIcon />, label: 'Sign In' },
+];
+
 export default function Navigation() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -60,6 +134,7 @@ export default function Navigation() {
   const [hoverOpen, setHoverOpen] = useState(false);
   const [settingsPage, setSettingsPage] = useState("");
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState([]);
 
   const handleTab = (e, val) => {
     setTab(val);
@@ -75,6 +150,12 @@ export default function Navigation() {
     if (isMobile) {
       setMobileDrawerOpen(false);
     }
+  };
+
+  const toggleGroup = (key) => {
+    setExpandedGroups(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
   };
 
   const menuItemStyle = {
@@ -99,81 +180,149 @@ export default function Navigation() {
     }
   };
 
-  const settingsMenuItems = [
-   { key: "service", icon: <MiscellaneousServicesIcon />, label: "Service Provider" },
-    { key: "bus", icon: <DirectionsBusIcon />, label: "Bus" },
-{ key: "driver", icon: <AirlineSeatReclineNormalIcon />, label: "Driver" },
-    { key: "conductor", icon: <PersonIcon />, label: "Conductor" },
-    { key: "busroute", icon: <AltRouteIcon />, label: "Busroute" },
-    { key: "busstop", icon: <TransferWithinAStationIcon />, label: "BusStop" },
+  const childItemStyle = {
+    ...menuItemStyle,
+    ml: 3,
+    py: 0.8,
+    "&:hover": {
+      transform: "translateX(2px)",
+    }
+  };
 
-    
-    
-    // { key: "class", icon: <ClassIcon />, label: "Class" },
-    // { key: "division", icon: <GroupsIcon />, label: "Division" },
-    // { key: "medium", icon: <LanguageIcon />, label: "Medium" },
-    // { key: "academic", icon: <CalendarMonthIcon />, label: "Academic Year" },
-    // { key: "studentfee", icon: <PaymentIcon />, label: "Student Fee" },
-    // { key: "signin", icon: <LoginIcon />, label: "Sign In" },
-    // { key: "studentsignup", icon: <PersonAddIcon />, label: "Student Sign Up" },
-      // { key: "buslocation",   icon: <LocationOnIcon />, label: "Bus Location" },
-    { key: "routestop",  icon: <AltRouteIcon />,label: "Route Stop" },
-    // { key: "busdetail", icon: <DirectionsBusIcon />, label: "Bus Detail" },
-    // { key: "routedetail",  icon: <RouteIcon />,label: "Route Detail" },
-    // { key: "driversignup",  icon: <BadgeIcon />, label: "Driver SignUp" },
-    // { key: "conductorsignup", icon: <SupervisorAccountIcon />, label: "Conductor SignUp" },
-   
-  ];
-
-  // Mobile Drawer
-  const MobileDrawer = () => (
-    <Drawer
-      anchor="left"
-      open={mobileDrawerOpen}
-      onClose={() => setMobileDrawerOpen(false)}
-      sx={{
-        display: { xs: 'block', md: 'none' },
-        '& .MuiDrawer-paper': {
-          width: 280,
-          background: "linear-gradient(180deg, #6495ED 100%, #4169E1 100%)",
-
-          color: "#fff",
-          p: 2,
-        },
-      }}
-    >
-      <Box sx={{ p: 2, fontWeight: "bold", fontSize: 18 }}>
-        <DashboardIcon sx={{ fontSize: 18, mr: 1 }} /> Main Dashboard
-      </Box>
-      <List>
-        <ListItemButton sx={{ borderRadius: 2, mb: 1 }}>
-          <ListItemText primary="Bustracking system" />
+  // ================= RENDER HELPERS =================
+  const renderMenuItem = (item, isChild = false) => {
+    if (item.type === 'group') {
+      const isExpanded = expandedGroups.includes(item.key);
+      return (
+        <React.Fragment key={item.key}>
+          <ListItemButton
+            sx={isChild ? childItemStyle : menuItemStyle}
+            onClick={() => toggleGroup(item.key)}
+          >
+            <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
+              {item.icon}
+            </ListItemIcon>
+            {hoverOpen && (
+              <>
+                <ListItemText primary={item.label} />
+                {isExpanded ? <ExpandLess /> : <ExpandMore />}
+              </>
+            )}
+          </ListItemButton>
+          {hoverOpen && (
+            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {item.children.map(child => renderMenuItem(child, true))}
+              </List>
+            </Collapse>
+          )}
+        </React.Fragment>
+      );
+    } else {
+      // leaf item
+      return (
+        <ListItemButton
+          key={item.key}
+          sx={isChild ? childItemStyle : menuItemStyle}
+          onClick={() => openSettingsPage(item.key)}
+        >
+          <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
+            {item.icon}
+          </ListItemIcon>
+          {hoverOpen && <ListItemText primary={item.label} />}
         </ListItemButton>
-      </List>
-      <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, opacity: 0.7 }}>
-        Settings
-      </Typography>
-      <List>
-        {settingsMenuItems.map((item) => (
+      );
+    }
+  };
+
+  // ================= MOBILE DRAWER =================
+  const MobileDrawer = () => {
+    const renderMobileItem = (item, depth = 0) => {
+      if (item.type === 'group') {
+        const isExpanded = expandedGroups.includes(item.key);
+        return (
+          <React.Fragment key={item.key}>
+            <ListItemButton
+              onClick={() => toggleGroup(item.key)}
+              sx={{
+                borderRadius: 2,
+                mb: 0.5,
+                pl: depth === 0 ? 2 : 3,
+                '&:hover': {
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                }
+              }}
+            >
+              <ListItemIcon sx={{ color: '#fff', minWidth: 36 }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.label} />
+              {isExpanded ? <ExpandLess /> : <ExpandMore />}
+            </ListItemButton>
+            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {item.children.map(child => renderMobileItem(child, depth + 1))}
+              </List>
+            </Collapse>
+          </React.Fragment>
+        );
+      } else {
+        return (
           <ListItemButton
             key={item.key}
             onClick={() => openSettingsPage(item.key)}
             sx={{
               borderRadius: 2,
               mb: 0.5,
+              pl: depth === 0 ? 2 : 4,
               '&:hover': {
                 bgcolor: 'rgba(255,255,255,0.2)',
               }
             }}
           >
-            {item.icon}
-            <ListItemText sx={{ ml: 2 }} primary={item.label} />
+            <ListItemIcon sx={{ color: '#fff', minWidth: 36 }}>
+              {item.icon}
+            </ListItemIcon>
+            <ListItemText primary={item.label} />
           </ListItemButton>
-        ))}
-      </List>
-    </Drawer>
-  );
+        );
+      }
+    };
 
+    return (
+      <Drawer
+        anchor="left"
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': {
+            width: 280,
+            background: "linear-gradient(180deg, #6495ED 100%, #4169E1 100%)",
+            color: "#fff",
+            p: 2,
+          },
+        }}
+      >
+        <Box sx={{ p: 2, fontWeight: "bold", fontSize: 18 }}>
+          <DashboardIcon sx={{ fontSize: 18, mr: 1 }} /> Main Dashboard
+        </Box>
+        <List>
+          <ListItemButton sx={{ borderRadius: 2, mb: 1 }}>
+            <ListItemText primary="Bustracking system" />
+          </ListItemButton>
+        </List>
+        <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, opacity: 0.7 }}>
+          Settings
+        </Typography>
+        <List>
+          {settingsMenuData.map(item => renderMobileItem(item))}
+        </List>
+      </Drawer>
+    );
+  };
+
+  // ================= MAIN RENDER =================
   return (
     <Box sx={{ display: "flex", bgcolor: "#f4f6f8", minHeight: "100vh" }}>
       {/* Mobile AppBar */}
@@ -251,16 +400,7 @@ export default function Navigation() {
           }}
         >
           <List sx={{ display: "flex", flexDirection: "column", gap: hoverOpen ? 0.3 : 0.3 }}>
-            {settingsMenuItems.map((item) => (
-              <ListItemButton
-                key={item.key}
-                sx={menuItemStyle}
-                onClick={() => openSettingsPage(item.key)}
-              >
-                {item.icon}
-                {hoverOpen && <ListItemText sx={{ ml: 2 }} primary={item.label} />}
-              </ListItemButton>
-            ))}
+            {settingsMenuData.map(item => renderMenuItem(item))}
           </List>
         </Box>
       )}
@@ -339,8 +479,8 @@ export default function Navigation() {
               overflow: 'auto',
             }}
           >
-            {/* {tab === 0 && <Dashboard />} */}
-            {/* {tab === 1 && <Student />} */}
+            {tab === 0 && <Dashboard />}
+            {tab === 1 && <Student />}
             {tab === 2 && <Typography>Payment Page</Typography>}
             {tab === 3 && <Bustrip />}
             {tab === 4 && <Typography>Collection Page</Typography>}
@@ -387,6 +527,7 @@ export default function Navigation() {
             {settingsPage === "busdetail" && <BusDetail/>}
             {settingsPage === "routedetail" && <RouteDetail/>}
             {settingsPage === "routestop" && <RouteStop/>}
+            {settingsPage === "bussupplier" && <BusSupplier/>}
           </Box>
         )}
       </Box>

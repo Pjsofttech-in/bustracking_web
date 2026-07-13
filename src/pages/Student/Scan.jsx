@@ -48,7 +48,6 @@ import {
     School as SchoolIcon
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-import { api } from "../services/api";
 
 // ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
 const PageContainer = styled(Box)(({ theme }) => ({

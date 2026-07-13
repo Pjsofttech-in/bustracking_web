@@ -39,7 +39,6 @@ import {
   Delete as DeleteIcon,
   Close as CloseIcon,
   Search as SearchIcon,
-  Refresh as RefreshIcon,
   Person as PersonIcon,
   Phone as PhoneIcon,
   Badge as BadgeIcon,
@@ -420,7 +419,6 @@ const StatLabel = styled(Typography)(({ theme }) => ({
 const Conductor = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isExtraSmall = useMediaQuery('(max-width:400px)');
 
@@ -440,7 +438,7 @@ const Conductor = () => {
     severity: 'success'
   });
 
-  // Form state - Added new fields
+  // Form state
   const emptyForm = {
     id: null,
     name: '',
@@ -462,7 +460,6 @@ const Conductor = () => {
     pincode: ''
   };
   const [form, setForm] = useState(emptyForm);
-
   const statusOptions = ['Join', 'Terminated', 'Suspended'];
 
   // ================= LOAD DATA =================
@@ -518,22 +515,26 @@ const Conductor = () => {
     }
   };
 
-  // ================= FILE UPLOAD HANDLING =================
+  // ================= FILE UPLOAD =================
   const handleFileChange = (e, field) => {
     const file = e.target.files[0];
     if (file) {
-      setForm({ 
-        ...form, 
+      setForm({
+        ...form,
         [field]: file,
-        [`${field}Url`]: URL.createObjectURL(file) 
+        [`${field}Url`]: URL.createObjectURL(file)
       });
     }
   };
 
-  const resetForm = () => {
-    setForm(emptyForm);
-    setIsEdit(false);
-    setSelectedId(null);
+  // ================= CONVERT TO BASE64 =================
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   // ================= DIALOG HANDLING =================
@@ -560,7 +561,13 @@ const Conductor = () => {
     resetForm();
   };
 
-  // ================= CRUD OPERATIONS =================
+  const resetForm = () => {
+    setForm(emptyForm);
+    setIsEdit(false);
+    setSelectedId(null);
+  };
+
+  // ================= CRUD =================
   const handleSubmit = async () => {
     if (!form.name || !form.phone || !form.employeeId || !form.status) {
       showSnackbar('Please fill in all required fields', 'warning');
@@ -585,6 +592,16 @@ const Conductor = () => {
 
     setSubmitting(true);
     try {
+      // Convert files to Base64
+      let licensePhotoBase64 = null;
+      let conductorPhotoBase64 = null;
+      if (form.licensePhoto) {
+        licensePhotoBase64 = await convertFileToBase64(form.licensePhoto);
+      }
+      if (form.conductorPhoto) {
+        conductorPhotoBase64 = await convertFileToBase64(form.conductorPhoto);
+      }
+
       const payload = {
         name: form.name.trim(),
         phone: form.phone.trim(),
@@ -594,8 +611,8 @@ const Conductor = () => {
         joiningDate: form.joiningDate || null,
         terminateDate: form.terminateDate || null,
         licenseExpiryDate: form.licenseExpiryDate || null,
-        licensePhoto: form.licensePhoto || null,
-        conductorPhoto: form.conductorPhoto || null,
+        licensePhoto: licensePhotoBase64,
+        conductorPhoto: conductorPhotoBase64,
         houseNo: form.houseNo || '',
         street: form.street || '',
         city: form.city || '',
@@ -615,6 +632,7 @@ const Conductor = () => {
 
       handleCloseDialog();
     } catch (error) {
+      console.error('Error saving conductor:', error);
       showSnackbar(error.message || 'Failed to save conductor', 'error');
     } finally {
       setSubmitting(false);
@@ -623,7 +641,6 @@ const Conductor = () => {
 
   const handleDelete = async () => {
     if (!selectedId) return;
-
     setSubmitting(true);
     try {
       await conductorApi.delete(selectedId);
@@ -798,16 +815,16 @@ const Conductor = () => {
                           {c.email || '-'}
                         </TableCell>
                         <TableCell>
-                          <Chip 
-                            label={c.employeeId} 
-                            size="small" 
-                            sx={{ 
-                              bgcolor: '#dbeafe', 
+                          <Chip
+                            label={c.employeeId}
+                            size="small"
+                            sx={{
+                              bgcolor: '#dbeafe',
                               color: '#6495ED',
                               fontWeight: 600,
                               fontSize: { xs: '0.6rem', sm: '0.7rem' },
                               height: { xs: '20px', sm: '24px' }
-                            }} 
+                            }}
                           />
                         </TableCell>
                         <TableCell align="center">
@@ -842,10 +859,10 @@ const Conductor = () => {
                         <TableCell align="center">
                           <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                             <Tooltip title="Edit">
-                              <IconButton 
-                                size="small" 
-                                onClick={() => handleEditOpen(c)} 
-                                sx={{ 
+                              <IconButton
+                                size="small"
+                                onClick={() => handleEditOpen(c)}
+                                sx={{
                                   color: '#f59e0b',
                                   padding: { xs: '4px', sm: '6px' }
                                 }}
@@ -860,7 +877,7 @@ const Conductor = () => {
                                   setSelectedId(c.id);
                                   setDeleteDialogOpen(true);
                                 }}
-                                sx={{ 
+                                sx={{
                                   color: '#ef4444',
                                   padding: { xs: '4px', sm: '6px' }
                                 }}
@@ -908,11 +925,11 @@ const Conductor = () => {
                               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
                                 Conductor #{c.id}
                               </Typography>
-                              <Typography variant="h6" sx={{ 
-                                fontWeight: 600, 
+                              <Typography variant="h6" sx={{
+                                fontWeight: 600,
                                 fontSize: { xs: '0.9rem', sm: '1rem' },
-                                display: 'flex', 
-                                alignItems: 'center', 
+                                display: 'flex',
+                                alignItems: 'center',
                                 gap: 0.5,
                                 mt: 0.25
                               }}>
@@ -935,10 +952,10 @@ const Conductor = () => {
                             />
                           </Box>
 
-                          <Box sx={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr' }, 
-                            gap: { xs: 0.5, sm: 1 }, 
+                          <Box sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr' },
+                            gap: { xs: 0.5, sm: 1 },
                             mt: 1.5,
                             pt: 1.5,
                             borderTop: '1px solid #f1f5f9'
@@ -972,7 +989,8 @@ const Conductor = () => {
                             </Box>
                             <Box>
                               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.5rem', sm: '0.55rem' } }}>
-                                License Expiry                              </Typography>
+                                License Expiry
+                              </Typography>
                               <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                                 <CalendarTodayIcon sx={{ fontSize: { xs: 12, sm: 14 }, color: '#64748b', mr: 0.5 }} />
                                 {formatDate(c.licenseExpiryDate)}
@@ -982,8 +1000,8 @@ const Conductor = () => {
                               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.5rem', sm: '0.55rem' } }}>
                                 Address
                               </Typography>
-                              <Typography variant="body2" sx={{ 
-                                fontWeight: 500, 
+                              <Typography variant="body2" sx={{
+                                fontWeight: 500,
                                 fontSize: { xs: '0.6rem', sm: '0.7rem' },
                                 display: 'flex',
                                 alignItems: 'center',
@@ -996,17 +1014,17 @@ const Conductor = () => {
                             </Box>
                           </Box>
 
-                          <Box sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'flex-end', 
-                            gap: 1, 
-                            mt: 1.5, 
-                            pt: 1.5, 
-                            borderTop: '1px solid #f1f5f9' 
+                          <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: 1,
+                            mt: 1.5,
+                            pt: 1.5,
+                            borderTop: '1px solid #f1f5f9'
                           }}>
-                            <Button 
-                              size="small" 
-                              startIcon={<EditIcon />} 
+                            <Button
+                              size="small"
+                              startIcon={<EditIcon />}
                               onClick={() => handleEditOpen(c)}
                               sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                             >
@@ -1053,18 +1071,18 @@ const Conductor = () => {
           onClose={handleCloseDialog}
           maxWidth="md"
           fullWidth
-          PaperProps={{ 
-            sx: { 
-              borderRadius: { xs: '16px', sm: '20px' }, 
-              p: { xs: 0.5, sm: 1 },
-              margin: { xs: '10px', sm: '16px' }
-            } 
+          PaperProps={{
+            sx: {
+              borderRadius: { xs: '16px', sm: '20px' },
+              padding: { xs: 1.5, sm: 2 },
+              margin: { xs: 2, sm: 3 }
+            }
           }}
         >
-          <DialogTitle sx={{ 
-            fontWeight: 700, 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <DialogTitle sx={{
+            fontWeight: 700,
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             fontSize: { xs: '1rem', sm: '1.25rem' },
             p: { xs: 1.5, sm: 2 }
@@ -1178,8 +1196,8 @@ const Conductor = () => {
                       />
                     </Button>
                     {form.licensePhotoUrl && (
-                      <Avatar 
-                        src={form.licensePhotoUrl} 
+                      <Avatar
+                        src={form.licensePhotoUrl}
                         variant="rounded"
                         sx={{ width: 50, height: 50, border: '1px solid #e2e8f0' }}
                       />
@@ -1212,8 +1230,8 @@ const Conductor = () => {
                       />
                     </Button>
                     {form.conductorPhotoUrl && (
-                      <Avatar 
-                        src={form.conductorPhotoUrl} 
+                      <Avatar
+                        src={form.conductorPhotoUrl}
                         sx={{ width: 50, height: 50, border: '1px solid #e2e8f0' }}
                       />
                     )}
@@ -1223,17 +1241,17 @@ const Conductor = () => {
             </Grid>
           </DialogContent>
 
-          <DialogActions sx={{ 
-            p: { xs: 1.5, sm: 2.5 }, 
-            pt: { xs: 0.5, sm: 1 }, 
-            gap: 1, 
+          <DialogActions sx={{
+            p: { xs: 1.5, sm: 2.5 },
+            pt: { xs: 0.5, sm: 1 },
+            gap: 1,
             flexWrap: 'wrap',
             flexDirection: { xs: 'column', sm: 'row' }
           }}>
-            <Button 
-              onClick={handleCloseDialog} 
-              disabled={submitting} 
-              sx={{ 
+            <Button
+              onClick={handleCloseDialog}
+              disabled={submitting}
+              sx={{
                 color: '#64748b',
                 width: { xs: '100%', sm: 'auto' },
                 order: { xs: 2, sm: 1 }
@@ -1266,16 +1284,16 @@ const Conductor = () => {
           onClose={() => setDeleteDialogOpen(false)}
           maxWidth="xs"
           fullWidth
-          PaperProps={{ 
-            sx: { 
-              borderRadius: { xs: '16px', sm: '20px' }, 
-              p: { xs: 0.5, sm: 1 },
-              margin: { xs: '10px', sm: '16px' }
-            } 
+          PaperProps={{
+            sx: {
+              borderRadius: { xs: '16px', sm: '20px' },
+              padding: { xs: 1.5, sm: 2 },
+              margin: { xs: 2, sm: 3 }
+            }
           }}
         >
-          <DialogTitle sx={{ 
-            fontWeight: 700, 
+          <DialogTitle sx={{
+            fontWeight: 700,
             color: '#dc2626',
             fontSize: { xs: '1rem', sm: '1.1rem' },
             p: { xs: 1.5, sm: 2 }
@@ -1287,15 +1305,15 @@ const Conductor = () => {
               Are you sure you want to delete this conductor? This action cannot be undone.
             </Typography>
           </DialogContent>
-          <DialogActions sx={{ 
-            p: { xs: 1.5, sm: 2.5 }, 
+          <DialogActions sx={{
+            p: { xs: 1.5, sm: 2.5 },
             gap: 1,
             flexDirection: { xs: 'column', sm: 'row' }
           }}>
-            <Button 
-              onClick={() => setDeleteDialogOpen(false)} 
-              disabled={submitting} 
-              sx={{ 
+            <Button
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={submitting}
+              sx={{
                 color: '#64748b',
                 width: { xs: '100%', sm: 'auto' },
                 order: { xs: 2, sm: 1 }
@@ -1308,9 +1326,9 @@ const Conductor = () => {
               color="error"
               onClick={handleDelete}
               disabled={submitting}
-              sx={{ 
-                borderRadius: '10px', 
-                fontWeight: 600, 
+              sx={{
+                borderRadius: '10px',
+                fontWeight: 600,
                 px: 3,
                 width: { xs: '100%', sm: 'auto' },
                 order: { xs: 1, sm: 2 }
@@ -1340,8 +1358,8 @@ const Conductor = () => {
             onClose={() => setSnackbar({ ...snackbar, open: false })}
             severity={snackbar.severity}
             variant="filled"
-            sx={{ 
-              borderRadius: '12px', 
+            sx={{
+              borderRadius: '12px',
               width: '100%',
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
               '& .MuiAlert-icon': {
