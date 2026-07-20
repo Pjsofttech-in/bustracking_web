@@ -1,7 +1,7 @@
 // Dashboard.jsx - Fully Responsive for All iPhone Models
 
 import { useState, useEffect } from 'react'
-import '../pages/CSS.css';
+import '../../pages/Dashboard/CSS.css'
 import { Routes, Route, Link } from 'react-router'
 
 function Dashboard() {

@@ -1,5 +1,4 @@
-// Medium.jsx - Fully Responsive for All iPhone Models
-
+// src/pages/Medium/Medium.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -39,8 +38,10 @@ import LanguageIcon from "@mui/icons-material/Language";
 import TranslateIcon from "@mui/icons-material/Translate";
 import { styled } from "@mui/material/styles";
 
+// ✅ Import mediumApi
+import mediumApi from "../../api/mediumApi";
 
-// ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
+// ================= STYLED COMPONENTS =================
 const PageContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   minHeight: "100vh",
@@ -432,7 +433,7 @@ export default function Medium() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await api.mediums.getAll();
+      const data = await mediumApi.getAll();
       setData(data);
     } catch (error) {
       console.error("Error fetching medium data", error);
@@ -475,7 +476,7 @@ export default function Medium() {
         mediumName: form.mediumName.trim()
       };
       
-      const newMedium = await api.mediums.create(mediumData);
+      const newMedium = await mediumApi.create(mediumData);
       setData([...data, newMedium]);
       showSnackbar("Medium Added Successfully", "success");
       setForm({ mediumName: "" });
@@ -497,7 +498,7 @@ export default function Medium() {
   const handleConfirmDelete = async () => {
     setSubmitting(true);
     try {
-      await api.mediums.delete(selectedMedium.id);
+      await mediumApi.delete(selectedMedium.id);
       setData(data.filter(item => item.id !== selectedMedium.id));
       showSnackbar("Medium Deleted Successfully", "success");
       setDeleteDialogOpen(false);

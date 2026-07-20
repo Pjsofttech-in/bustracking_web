@@ -1,5 +1,4 @@
-// Division.jsx - Fully Responsive for All iPhone Models
-
+// src/pages/Division/Division.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -39,8 +38,11 @@ import BusinessIcon from "@mui/icons-material/Business";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import { styled } from "@mui/material/styles";
 
+// ✅ Import divisionApi
+import divisionApi from "../../api/divisionApi";
 
-// ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
+// ================= STYLED COMPONENTS =================
+// (All styled components are exactly as in your provided file)
 const PageContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   minHeight: "100vh",
@@ -55,33 +57,19 @@ const MainContent = styled(Box)(({ theme }) => ({
   width: "100%",
   maxWidth: "100%",
   overflowX: "hidden",
-  [theme.breakpoints.down('lg')]: {
-    padding: theme.spacing(2.5),
-  },
-  [theme.breakpoints.down('md')]: {
-    padding: theme.spacing(2),
-  },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1.5),
-  },
-  [theme.breakpoints.down('xs')]: {
-    padding: theme.spacing(1),
-  },
-  '@media (max-width: 380px)': {
-    padding: theme.spacing(0.75),
-  }
+  [theme.breakpoints.down('lg')]: { padding: theme.spacing(2.5) },
+  [theme.breakpoints.down('md')]: { padding: theme.spacing(2) },
+  [theme.breakpoints.down('sm')]: { padding: theme.spacing(1.5) },
+  [theme.breakpoints.down('xs')]: { padding: theme.spacing(1) },
+  '@media (max-width: 380px)': { padding: theme.spacing(0.75) }
 }));
 
 const ContentWrapper = styled(Box)(({ theme }) => ({
   maxWidth: "1200px",
   margin: "0 auto",
   width: "100%",
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(0, 0.5),
-  },
-  [theme.breakpoints.down('xs')]: {
-    padding: 0,
-  }
+  [theme.breakpoints.down('sm')]: { padding: theme.spacing(0, 0.5) },
+  [theme.breakpoints.down('xs')]: { padding: 0 }
 }));
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -90,58 +78,23 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   overflow: "hidden",
   transition: "all 0.3s ease",
   width: "100%",
-  [theme.breakpoints.down('sm')]: {
-    borderRadius: "12px",
-  },
-  [theme.breakpoints.down('xs')]: {
-    borderRadius: "8px",
-  },
-  '@media (max-width: 380px)': {
-    borderRadius: "6px",
-    margin: "0 -2px",
-  }
+  [theme.breakpoints.down('sm')]: { borderRadius: "12px" },
+  [theme.breakpoints.down('xs')]: { borderRadius: "8px" },
+  '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 400px)",
   minHeight: "300px",
   width: "100%",
-  '&::-webkit-scrollbar': {
-    width: '6px',
-    height: '6px',
-  },
-  '&::-webkit-scrollbar-track': {
-    backgroundColor: '#f1f5f9',
-    borderRadius: '4px',
-  },
-  '&::-webkit-scrollbar-thumb': {
-    backgroundColor: '#cbd5e1',
-    borderRadius: '4px',
-    '&:hover': {
-      backgroundColor: '#94a3b8',
-    },
-  },
+  '&::-webkit-scrollbar': { width: '6px', height: '6px' },
+  '&::-webkit-scrollbar-track': { backgroundColor: '#f1f5f9', borderRadius: '4px' },
+  '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px', '&:hover': { backgroundColor: '#94a3b8' } },
   scrollBehavior: "smooth",
-  [theme.breakpoints.down('md')]: {
-    maxHeight: "calc(100vh - 380px)",
-    minHeight: "250px",
-  },
-  [theme.breakpoints.down('sm')]: {
-    maxHeight: "calc(100vh - 350px)",
-    minHeight: "200px",
-  },
-  [theme.breakpoints.down('xs')]: {
-    maxHeight: "calc(100vh - 320px)",
-    minHeight: "150px",
-    '&::-webkit-scrollbar': {
-      width: '4px',
-      height: '4px',
-    },
-  },
-  '@media (max-width: 380px)': {
-    maxHeight: "calc(100vh - 300px)",
-    minHeight: "120px",
-  }
+  [theme.breakpoints.down('md')]: { maxHeight: "calc(100vh - 380px)", minHeight: "250px" },
+  [theme.breakpoints.down('sm')]: { maxHeight: "calc(100vh - 350px)", minHeight: "200px" },
+  [theme.breakpoints.down('xs')]: { maxHeight: "calc(100vh - 320px)", minHeight: "150px", '&::-webkit-scrollbar': { width: '4px', height: '4px' } },
+  '@media (max-width: 380px)': { maxHeight: "calc(100vh - 300px)", minHeight: "120px" }
 }));
 
 const GradientHeader = styled(TableHead)(({ theme }) => ({
@@ -160,103 +113,33 @@ const GradientHeader = styled(TableHead)(({ theme }) => ({
     position: "sticky",
     top: 0,
     backgroundColor: "inherit",
-    [theme.breakpoints.down('lg')]: {
-      fontSize: "0.7rem",
-      padding: "10px 8px",
-    },
-    [theme.breakpoints.down('md')]: {
-      fontSize: "0.65rem",
-      padding: "8px 6px",
-    },
-    [theme.breakpoints.down('sm')]: {
-      fontSize: "0.6rem",
-      padding: "6px 5px",
-      letterSpacing: "0.2px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      fontSize: "0.55rem",
-      padding: "5px 4px",
-      letterSpacing: "0.1px",
-    },
-    '@media (max-width: 380px)': {
-      fontSize: "0.5rem",
-      padding: "4px 3px",
-    }
+    [theme.breakpoints.down('lg')]: { fontSize: "0.7rem", padding: "10px 8px" },
+    [theme.breakpoints.down('md')]: { fontSize: "0.65rem", padding: "8px 6px" },
+    [theme.breakpoints.down('sm')]: { fontSize: "0.6rem", padding: "6px 5px", letterSpacing: "0.2px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.55rem", padding: "5px 4px", letterSpacing: "0.1px" },
+    '@media (max-width: 380px)': { fontSize: "0.5rem", padding: "4px 3px" }
   },
-  '& th:first-of-type': {
-    paddingLeft: "16px",
-    [theme.breakpoints.down('sm')]: {
-      paddingLeft: "10px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      paddingLeft: "8px",
-    },
-  },
-  '& th:last-of-type': {
-    paddingRight: "16px",
-    [theme.breakpoints.down('sm')]: {
-      paddingRight: "10px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      paddingRight: "8px",
-    },
-  }
+  '& th:first-of-type': { paddingLeft: "16px", [theme.breakpoints.down('sm')]: { paddingLeft: "10px" }, [theme.breakpoints.down('xs')]: { paddingLeft: "8px" } },
+  '& th:last-of-type': { paddingRight: "16px", [theme.breakpoints.down('sm')]: { paddingRight: "10px" }, [theme.breakpoints.down('xs')]: { paddingRight: "8px" } }
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   transition: "background-color 0.2s ease",
-  '&:hover': {
-    backgroundColor: "#f8fafc",
-  },
-  '&:nth-of-type(even)': {
-    backgroundColor: "#fafbfc",
-  },
-  '&:nth-of-type(even):hover': {
-    backgroundColor: "#f1f5f9",
-  },
+  '&:hover': { backgroundColor: "#f8fafc" },
+  '&:nth-of-type(even)': { backgroundColor: "#fafbfc" },
+  '&:nth-of-type(even):hover': { backgroundColor: "#f1f5f9" },
   '& td': {
     padding: "10px 12px",
     fontSize: "0.85rem",
     borderBottom: "1px solid #f1f5f9",
-    [theme.breakpoints.down('lg')]: {
-      padding: "8px 8px",
-      fontSize: "0.8rem",
-    },
-    [theme.breakpoints.down('md')]: {
-      padding: "7px 6px",
-      fontSize: "0.75rem",
-    },
-    [theme.breakpoints.down('sm')]: {
-      padding: "6px 5px",
-      fontSize: "0.7rem",
-    },
-    [theme.breakpoints.down('xs')]: {
-      padding: "5px 4px",
-      fontSize: "0.65rem",
-    },
-    '@media (max-width: 380px)': {
-      padding: "4px 3px",
-      fontSize: "0.6rem",
-    }
+    [theme.breakpoints.down('lg')]: { padding: "8px 8px", fontSize: "0.8rem" },
+    [theme.breakpoints.down('md')]: { padding: "7px 6px", fontSize: "0.75rem" },
+    [theme.breakpoints.down('sm')]: { padding: "6px 5px", fontSize: "0.7rem" },
+    [theme.breakpoints.down('xs')]: { padding: "5px 4px", fontSize: "0.65rem" },
+    '@media (max-width: 380px)': { padding: "4px 3px", fontSize: "0.6rem" }
   },
-  '& td:first-of-type': {
-    paddingLeft: "16px",
-    [theme.breakpoints.down('sm')]: {
-      paddingLeft: "10px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      paddingLeft: "8px",
-    },
-  },
-  '& td:last-of-type': {
-    paddingRight: "16px",
-    [theme.breakpoints.down('sm')]: {
-      paddingRight: "10px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      paddingRight: "8px",
-    },
-  }
+  '& td:first-of-type': { paddingLeft: "16px", [theme.breakpoints.down('sm')]: { paddingLeft: "10px" }, [theme.breakpoints.down('xs')]: { paddingLeft: "8px" } },
+  '& td:last-of-type': { paddingRight: "16px", [theme.breakpoints.down('sm')]: { paddingRight: "10px" }, [theme.breakpoints.down('xs')]: { paddingRight: "8px" } }
 }));
 
 const AddButton = styled(Button)(({ theme }) => ({
@@ -274,26 +157,10 @@ const AddButton = styled(Button)(({ theme }) => ({
     transform: "translateY(-2px)",
     boxShadow: "0 6px 20px rgba(65, 105, 225, 0.4)",
   },
-  [theme.breakpoints.down('md')]: {
-    padding: "8px 18px",
-    fontSize: "0.85rem",
-  },
-  [theme.breakpoints.down('sm')]: {
-    width: "100%",
-    padding: "10px 16px",
-    fontSize: "0.85rem",
-    justifyContent: "center",
-  },
-  [theme.breakpoints.down('xs')]: {
-    padding: "8px 12px",
-    fontSize: "0.8rem",
-    borderRadius: "10px",
-  },
-  '@media (max-width: 380px)': {
-    padding: "6px 10px",
-    fontSize: "0.75rem",
-    borderRadius: "8px",
-  }
+  [theme.breakpoints.down('md')]: { padding: "8px 18px", fontSize: "0.85rem" },
+  [theme.breakpoints.down('sm')]: { width: "100%", padding: "10px 16px", fontSize: "0.85rem", justifyContent: "center" },
+  [theme.breakpoints.down('xs')]: { padding: "8px 12px", fontSize: "0.8rem", borderRadius: "10px" },
+  '@media (max-width: 380px)': { padding: "6px 10px", fontSize: "0.75rem", borderRadius: "8px" }
 }));
 
 const StatsCard = styled(Paper)(({ theme }) => ({
@@ -302,25 +169,11 @@ const StatsCard = styled(Paper)(({ theme }) => ({
   border: "1px solid #f1f5f9",
   boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
   transition: "all 0.2s ease",
-  '&:hover': {
-    borderColor: "#6495ED",
-    boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)",
-  },
-  [theme.breakpoints.down('md')]: {
-    padding: theme.spacing(1.5),
-  },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1.2),
-    borderRadius: "10px",
-  },
-  [theme.breakpoints.down('xs')]: {
-    padding: theme.spacing(1),
-    borderRadius: "8px",
-  },
-  '@media (max-width: 380px)': {
-    padding: theme.spacing(0.75),
-    borderRadius: "6px",
-  }
+  '&:hover': { borderColor: "#6495ED", boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)" },
+  [theme.breakpoints.down('md')]: { padding: theme.spacing(1.5) },
+  [theme.breakpoints.down('sm')]: { padding: theme.spacing(1.2), borderRadius: "10px" },
+  [theme.breakpoints.down('xs')]: { padding: theme.spacing(1), borderRadius: "8px" },
+  '@media (max-width: 380px)': { padding: theme.spacing(0.75), borderRadius: "6px" }
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -329,82 +182,32 @@ const MobileCard = styled(Card)(({ theme }) => ({
   boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
   transition: "all 0.2s ease",
   width: "100%",
-  '&:hover': {
-    borderColor: "#6495ED",
-    boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)",
-  },
-  [theme.breakpoints.down('xs')]: {
-    borderRadius: "10px",
-  },
-  '@media (max-width: 380px)': {
-    borderRadius: "8px",
-  }
+  '&:hover': { borderColor: "#6495ED", boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)" },
+  [theme.breakpoints.down('xs')]: { borderRadius: "10px" },
+  '@media (max-width: 380px)': { borderRadius: "8px" }
 }));
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
     borderRadius: "20px",
     padding: theme.spacing(1),
-    [theme.breakpoints.down('md')]: {
-      margin: "24px",
-      padding: theme.spacing(0.75),
-    },
-    [theme.breakpoints.down('sm')]: {
-      margin: "16px",
-      width: "100%",
-      borderRadius: "16px",
-      maxHeight: "95vh",
-      padding: theme.spacing(0.5),
-    },
-    [theme.breakpoints.down('xs')]: {
-      margin: "10px",
-      borderRadius: "14px",
-      maxHeight: "92vh",
-    },
-    '@media (max-width: 380px)': {
-      margin: "6px",
-      borderRadius: "12px",
-      maxHeight: "90vh",
-      padding: theme.spacing(0.25),
-    }
+    [theme.breakpoints.down('md')]: { margin: "24px", padding: theme.spacing(0.75) },
+    [theme.breakpoints.down('sm')]: { margin: "16px", width: "100%", borderRadius: "16px", maxHeight: "95vh", padding: theme.spacing(0.5) },
+    [theme.breakpoints.down('xs')]: { margin: "10px", borderRadius: "14px", maxHeight: "92vh" },
+    '@media (max-width: 380px)': { margin: "6px", borderRadius: "12px", maxHeight: "90vh", padding: theme.spacing(0.25) }
   }
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiOutlinedInput-root': {
     borderRadius: "10px",
-    '&:hover fieldset': {
-      borderColor: "#6495ED",
-    },
-    '&.Mui-focused fieldset': {
-      borderColor: "#6495ED",
-      borderWidth: "2px",
-    },
-    [theme.breakpoints.down('sm')]: {
-      borderRadius: "8px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      borderRadius: "6px",
-    }
+    '&:hover fieldset': { borderColor: "#6495ED" },
+    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
+    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
+    [theme.breakpoints.down('xs')]: { borderRadius: "6px" }
   },
-  '& .MuiInputLabel-root': {
-    [theme.breakpoints.down('sm')]: {
-      fontSize: "0.85rem",
-    },
-    [theme.breakpoints.down('xs')]: {
-      fontSize: "0.75rem",
-    }
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: {
-      fontSize: "0.85rem",
-      padding: "10px 12px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      fontSize: "0.75rem",
-      padding: "8px 10px",
-    }
-  }
+  '& .MuiInputLabel-root': { [theme.breakpoints.down('sm')]: { fontSize: "0.85rem" }, [theme.breakpoints.down('xs')]: { fontSize: "0.75rem" } },
+  '& .MuiInputBase-input': { [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" }, [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" } }
 }));
 
 // ================= MAIN COMPONENT =================
@@ -432,7 +235,8 @@ export default function Division() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await api.divisions.getAll();
+      // ✅ Replace api.divisions.getAll() with divisionApi.getAll()
+      const data = await divisionApi.getAll();
       setData(data);
     } catch (error) {
       console.error("Error fetching division data", error);
@@ -475,7 +279,8 @@ export default function Division() {
         divisionName: form.divisionName.trim()
       };
       
-      const newDivision = await api.divisions.create(divisionData);
+      // ✅ Replace api.divisions.create()
+      const newDivision = await divisionApi.create(divisionData);
       setData([...data, newDivision]);
       showSnackbar("Division Added Successfully", "success");
       setForm({ divisionName: "" });
@@ -497,7 +302,8 @@ export default function Division() {
   const handleConfirmDelete = async () => {
     setSubmitting(true);
     try {
-      await api.divisions.delete(selectedDivision.divisionId);
+      // ✅ Replace api.divisions.delete()
+      await divisionApi.delete(selectedDivision.divisionId);
       setData(data.filter(item => item.divisionId !== selectedDivision.divisionId));
       showSnackbar("Division Deleted Successfully", "success");
       setDeleteDialogOpen(false);
@@ -661,7 +467,7 @@ export default function Division() {
                   </GradientHeader>
                   <TableBody>
                     {data.length > 0 ? (
-                      data.map((row, index) => (
+                      data.map((row) => (
                         <StyledTableRow key={row.divisionId}>
                           <TableCell sx={{ fontWeight: 600 }}>{row.divisionId}</TableCell>
                           <TableCell>

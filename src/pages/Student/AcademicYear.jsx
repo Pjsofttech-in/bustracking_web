@@ -1,5 +1,4 @@
-// AcademicYear.jsx - Fully Responsive for All iPhone Models
-
+// src/pages/AcademicYear/AcademicYear.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -37,8 +36,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { styled } from "@mui/material/styles";
 
+// ✅ Import the API module
+import academicYearApi from "../../api/academicYearApi";
 
-// ================= STYLED COMPONENTS WITH RESPONSIVENESS =================
+// ================= STYLED COMPONENTS =================
 const PageContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   minHeight: "100vh",
@@ -447,7 +448,7 @@ export default function AcademicYear() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const response = await api.academicYears.getAll();
+      const response = await academicYearApi.getAll();
       setData(response);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -496,7 +497,7 @@ export default function AcademicYear() {
         yearName: form.yearName.trim()
       };
       
-      const newYear = await api.academicYears.create(yearData);
+      const newYear = await academicYearApi.create(yearData);
       setData([...data, newYear]);
       showSnackbar("Academic Year Added Successfully", "success");
       setForm({ yearName: "" });
@@ -519,7 +520,7 @@ export default function AcademicYear() {
   const handleConfirmDelete = async () => {
     setSubmitting(true);
     try {
-      await api.academicYears.delete(selectedId);
+      await academicYearApi.delete(selectedId);
       
       const filteredData = data.filter(item => item.id !== selectedId);
       setData(filteredData);
@@ -549,7 +550,7 @@ export default function AcademicYear() {
     setSubmitting(false);
   };
 
-  // Loading state
+  // ================= LOADING STATE =================
   if (loading) {
     return (
       <PageContainer>
@@ -572,6 +573,7 @@ export default function AcademicYear() {
     );
   }
 
+  // ================= RENDER =================
   return (
     <PageContainer>
       <MainContent>
@@ -666,7 +668,7 @@ export default function AcademicYear() {
                     <TableRow>
                       <TableCell sx={{ minWidth: { xs: "40px", sm: "50px", md: "80px" } }}>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          #
+                          Id
                         </Typography>
                       </TableCell>
                       <TableCell>

@@ -1,49 +1,37 @@
 import React, { useState } from "react";
+import { lazy, Suspense } from "react";
 import {
   Box, Paper, Tabs, Tab, Drawer,
   List, ListItemButton, ListItemText, Typography,
   useTheme, useMediaQuery, IconButton, AppBar, Toolbar,
-  Collapse, ListItemIcon
+  Collapse, ListSubheader
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
-import Dashboard from "./Dashboard";
-import ServiceProvider from "../pages/ServiceProvider/Serviceprovider";
-import Bus from "../pages/Bus/Bus";
-import Driver from "../pages/Driver/Driver";
-import Conductor from "../pages/Conductor/Conductor";
-import Bustrip from "../pages/Bus/Bustrip";
-import Busroute from "../pages/Bus/Busroute";
-import BusStop from "../pages/Bus/BusStop";
-import Class from "../pages/Student/Class";
-import Division from "../pages/Bus/Division";
-import Medium from "../pages/Student/Medium";
-import AcademicYear from "../pages/Student/AcademicYear";
-import Student from '../pages/Student/Student'
-import StudentFee from "../pages/Student/StudentFee";
-import StudentSignUp from "../pages/Student/StudentSignUp";
-import SignIn from "../pages/SignIn";
-import DriverSignUp from "../pages/Driver/DriverSignUp";
-import ConductorSignUp from "../pages/Conductor/ConductorSignUp";
-import BusLocation from "../pages/Bus/BusLocation";
-import BusDetail from "../pages/Bus/BusDetail";
-import RouteDetail from "../pages/Bus/RouteDetail";
-import RouteStop from "../pages/Bus/RouteStop";
-import BusSupplier from "../pages/ServiceProvider/Bussupplier";
 
-//--------Icons-------
+// Lazy imports
+const ServiceProvider = lazy(() => import("../pages/ServiceProvider/Serviceprovider"));
+const Bus = lazy(() => import("../pages/Bus/Bus"));
+const Driver = lazy(() => import("../pages/Driver/Driver"));
+const Conductor = lazy(() => import("../pages/Conductor/Conductor"));
+const BusStop = lazy(() => import("../pages/Bus/BusStop"));
+const BusRoute = lazy(() => import("../pages/Bus/BusRoute"));
+const BusLocation = lazy(() => import("../pages/Bus/BusLocation"));
+const Student = lazy(() => import("../pages/Student/Student"));
+const Dashboard = lazy(() => import("../pages/Dashboard/Dashboard"));
+const BusTrip = lazy(() => import("../pages/Bus/BusTrip"));
+const Class = lazy(() => import("../pages/Student/Class"));
+const AcademicYear = lazy(() => import("../pages/Student/AcademicYear"));
+const Medium = lazy(() => import("../pages/Student/Medium"));
+const Division = lazy(() => import("../pages/Student/Division"));
+const Scan = lazy(() => import("../pages/Student/Scan"));
+const StudentFeePayment = lazy(() => import("../pages/Student/StudentFeePayment"));
+
+// Icons
+import MenuIcon from "@mui/icons-material/Menu";
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import RouteIcon from "@mui/icons-material/Route";
-import BadgeIcon from "@mui/icons-material/Badge";
-import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
-import LoginIcon from "@mui/icons-material/Login";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import PaymentIcon from "@mui/icons-material/Payment";
+import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import AltRouteIcon from "@mui/icons-material/AltRoute";
 import TransferWithinAStationIcon from "@mui/icons-material/TransferWithinAStation";
-import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import PersonIcon from "@mui/icons-material/Person";
 import AirlineSeatReclineNormalIcon from "@mui/icons-material/AirlineSeatReclineNormal";
 import MiscellaneousServicesIcon from '@mui/icons-material/MiscellaneousServices';
@@ -51,78 +39,23 @@ import ClassIcon from '@mui/icons-material/Class';
 import GroupsIcon from "@mui/icons-material/Groups";
 import LanguageIcon from "@mui/icons-material/Language";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-
+import PaymentIcon from "@mui/icons-material/Payment";
+import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import { keyframes } from "@mui/system";
 
 const drawerWidth = 180;
 const miniWidth = 70;
 const fullWidth = 220;
 const FORM_GAP = 20;
 
-// ================= SETTINGS MENU DATA (HIERARCHICAL) =================
-const settingsMenuData = [
-  {
-    type: 'group',
-    key: 'serviceProviderGroup',
-    icon: <MiscellaneousServicesIcon />,
-    label: 'Service Provider',
-    children: [
-      { type: 'item', key: 'service', icon: <MiscellaneousServicesIcon />, label: 'Service Provider' },
-      { type: 'item', key: 'bussupplier', icon: <SupervisorAccountIcon />, label: 'Bus Supplier' },
-    ]
-  },
-  {
-    type: 'group',
-    key: 'busGroup',
-    icon: <DirectionsBusIcon />,
-    label: 'Bus',
-    children: [
-      { type: 'item', key: 'bus', icon: <DirectionsBusIcon />, label: 'Bus' },
-      { type: 'item', key: 'busstop', icon: <TransferWithinAStationIcon />, label: 'BusStop' },
-      { type: 'item', key: 'busroute', icon: <AltRouteIcon />, label: 'Busroute' },
-      { type: 'item', key: 'buslocation', icon: <LocationOnIcon />, label: 'Bus Location' },
-      { type: 'item', key: 'busdetail', icon: <DirectionsBusIcon />, label: 'Bus Detail' },
-      { type: 'item', key: 'routedetail', icon: <RouteIcon />, label: 'Route Detail' },
-      { type: 'item', key: 'routestop', icon: <AltRouteIcon />, label: 'Route Stop' },
-    ]
-  },
- 
-  {
-    type: 'group',
-    key: 'driverGroup',
-    icon: <AirlineSeatReclineNormalIcon />,
-    label: 'Driver',
-    children: [
-      { type: 'item', key: 'driver', icon: <AirlineSeatReclineNormalIcon />, label: 'Driver' },
-      { type: 'item', key: 'driversignup', icon: <BadgeIcon />, label: 'Driver SignUp' },
-    ]
-  },
-  {
-    type: 'group',
-    key: 'conductorGroup',
-    icon: <PersonIcon />,
-    label: 'Conductor',
-    children: [
-      { type: 'item', key: 'conductor', icon: <PersonIcon />, label: 'Conductor' },
-      { type: 'item', key: 'conductorsignup', icon: <SupervisorAccountIcon />, label: 'Conductor SignUp' },
-    ]
-  },
-   {
-    type: 'group',
-    key: 'studentGroup',
-    icon: <ClassIcon />,
-    label: 'Student',
-    children: [
-      { type: 'item', key: 'class', icon: <ClassIcon />, label: 'Class' },
-      { type: 'item', key: 'division', icon: <GroupsIcon />, label: 'Division' },
-      { type: 'item', key: 'medium', icon: <LanguageIcon />, label: 'Medium' },
-      { type: 'item', key: 'academic', icon: <CalendarMonthIcon />, label: 'Academic Year' },
-      { type: 'item', key: 'studentfee', icon: <PaymentIcon />, label: 'Student Fee' },
-      { type: 'item', key: 'studentsignup', icon: <PersonAddIcon />, label: 'Student Sign Up' },
-    ]
-  },
-  // Flat items (any that do not belong to a group)
-  { type: 'item', key: 'signin', icon: <LoginIcon />, label: 'Sign In' },
-];
+const pulse = keyframes`
+  0% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.7; }
+`;
 
 export default function Navigation() {
   const theme = useTheme();
@@ -134,29 +67,25 @@ export default function Navigation() {
   const [hoverOpen, setHoverOpen] = useState(false);
   const [settingsPage, setSettingsPage] = useState("");
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState([]);
+  const [expandedSections, setExpandedSections] = useState({});
 
   const handleTab = (e, val) => {
     setTab(val);
     setSettingsOpen(val === 6);
     setSettingsPage("");
-    if (isMobile) {
-      setMobileDrawerOpen(false);
-    }
+    if (isMobile) setMobileDrawerOpen(false);
   };
 
   const openSettingsPage = (page) => {
     setSettingsPage(page);
-    if (isMobile) {
-      setMobileDrawerOpen(false);
-    }
+    if (isMobile) setMobileDrawerOpen(false);
   };
 
-  const toggleGroup = (key) => {
-    setExpandedGroups(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
+  const toggleSection = (heading) => {
+    setExpandedSections(prev => ({ ...prev, [heading]: !prev[heading] }));
   };
+
+  const showArrowHint = (isMobile || isTablet) && settingsOpen;
 
   const menuItemStyle = {
     borderRadius: 3,
@@ -166,166 +95,226 @@ export default function Navigation() {
     transition: "all 0.3s ease",
     bgcolor: "transparent",
     color: "#fff",
-    "& .MuiListItemIcon-root": {
-      color: "#fff"
-    },
+    "& .MuiListItemIcon-root": { color: "#fff" },
     "&:hover": {
       bgcolor: "#fff",
       color: "#000",
       transform: "translateX(5px)",
       boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-      "& .MuiListItemIcon-root": {
-        color: "#000"
-      }
+      "& .MuiListItemIcon-root": { color: "#000" }
     }
   };
 
-  const childItemStyle = {
-    ...menuItemStyle,
-    ml: 3,
-    py: 0.8,
-    "&:hover": {
-      transform: "translateX(2px)",
+  // ---------- Settings structure ----------
+  const settingsSections = [
+    {
+      heading: "Bus",
+      icon: <DirectionsBusIcon />,
+      items: [
+        { key: "bus", icon: <DirectionsBusIcon />, label: "Bus" },
+        { key: "busstop", icon: <TransferWithinAStationIcon />, label: "Bus Stop" },
+        { key: "busroute", icon: <AltRouteIcon />, label: "Bus Route" },
+        { key: "buslocation", icon: <LocationOnIcon />, label: "Bus Location" },
+      ]
+    },
+    {
+      heading: "Student",
+      icon: <PersonIcon />,
+      items: [
+        { key: "academic", icon: <CalendarMonthIcon />, label: "Academic Year" },
+        { key: "class", icon: <ClassIcon />, label: "Class" },
+        { key: "medium", icon: <LanguageIcon />, label: "Medium" },
+        { key: "division", icon: <GroupsIcon />, label: "Division" },
+        { key: "studentfeepayment", icon: <PaymentIcon />, label: "Student Fee" },
+        { key: "scan", icon: <QrCodeScannerIcon />, label: "QR Scan" },
+      ]
     }
-  };
+  ];
 
-  // ================= RENDER HELPERS =================
-  const renderMenuItem = (item, isChild = false) => {
-    if (item.type === 'group') {
-      const isExpanded = expandedGroups.includes(item.key);
-      return (
-        <React.Fragment key={item.key}>
-          <ListItemButton
-            sx={isChild ? childItemStyle : menuItemStyle}
-            onClick={() => toggleGroup(item.key)}
-          >
-            <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
-              {item.icon}
-            </ListItemIcon>
-            {hoverOpen && (
-              <>
-                <ListItemText primary={item.label} />
-                {isExpanded ? <ExpandLess /> : <ExpandMore />}
-              </>
-            )}
-          </ListItemButton>
-          {hoverOpen && (
-            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding>
-                {item.children.map(child => renderMenuItem(child, true))}
-              </List>
-            </Collapse>
-          )}
-        </React.Fragment>
-      );
-    } else {
-      // leaf item
-      return (
-        <ListItemButton
-          key={item.key}
-          sx={isChild ? childItemStyle : menuItemStyle}
-          onClick={() => openSettingsPage(item.key)}
-        >
-          <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
-            {item.icon}
-          </ListItemIcon>
-          {hoverOpen && <ListItemText primary={item.label} />}
+  const topLevelItems = [
+    { key: "service", icon: <MiscellaneousServicesIcon />, label: "Service Provider" },
+    { key: "driver", icon: <AirlineSeatReclineNormalIcon />, label: "Driver" },
+    { key: "conductor", icon: <PersonIcon />, label: "Conductor" },
+  ];
+
+  // Helper to render a list of items (used in both mobile and desktop)
+  const renderItems = (items, isNested = false) =>
+    items.map(item => (
+      <ListItemButton
+        key={item.key}
+        onClick={() => openSettingsPage(item.key)}
+        sx={{
+          borderRadius: 2,
+          mb: 0.5,
+          pl: isNested ? 4 : 2,
+          '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+          ...(isNested && { ml: 2 }),
+        }}
+      >
+        {item.icon}
+        <ListItemText sx={{ ml: 2 }} primary={item.label} />
+      </ListItemButton>
+    ));
+
+  // ---------- Mobile Drawer ----------
+  const MobileDrawer = () => (
+    <Drawer
+      anchor="left"
+      open={mobileDrawerOpen}
+      onClose={() => setMobileDrawerOpen(false)}
+      sx={{
+        display: { xs: 'block', md: 'none' },
+        '& .MuiDrawer-paper': {
+          width: 280,
+          background: "linear-gradient(180deg, #6495ED 100%, #4169E1 100%)",
+          color: "#fff",
+          p: 2,
+        },
+      }}
+    >
+      <Box sx={{ p: 2, fontWeight: "bold", fontSize: 18 }}>
+        <DashboardIcon sx={{ fontSize: 18, mr: 1 }} /> Main Dashboard
+      </Box>
+      <List>
+        <ListItemButton sx={{ borderRadius: 2, mb: 1 }}>
+          <ListItemText primary="Bustracking system" />
         </ListItemButton>
-      );
-    }
-  };
-
-  // ================= MOBILE DRAWER =================
-  const MobileDrawer = () => {
-    const renderMobileItem = (item, depth = 0) => {
-      if (item.type === 'group') {
-        const isExpanded = expandedGroups.includes(item.key);
-        return (
-          <React.Fragment key={item.key}>
-            <ListItemButton
-              onClick={() => toggleGroup(item.key)}
-              sx={{
-                borderRadius: 2,
-                mb: 0.5,
-                pl: depth === 0 ? 2 : 3,
-                '&:hover': {
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                }
-              }}
-            >
-              <ListItemIcon sx={{ color: '#fff', minWidth: 36 }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.label} />
-              {isExpanded ? <ExpandLess /> : <ExpandMore />}
-            </ListItemButton>
-            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding>
-                {item.children.map(child => renderMobileItem(child, depth + 1))}
-              </List>
-            </Collapse>
-          </React.Fragment>
-        );
-      } else {
-        return (
+      </List>
+      <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, opacity: 0.7 }}>
+        Settings
+      </Typography>
+      <List>
+        {/* Top-level items */}
+        {topLevelItems.map(item => (
           <ListItemButton
             key={item.key}
             onClick={() => openSettingsPage(item.key)}
-            sx={{
-              borderRadius: 2,
-              mb: 0.5,
-              pl: depth === 0 ? 2 : 4,
-              '&:hover': {
-                bgcolor: 'rgba(255,255,255,0.2)',
-              }
-            }}
+            sx={{ borderRadius: 2, mb: 0.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
           >
-            <ListItemIcon sx={{ color: '#fff', minWidth: 36 }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.label} />
+            {item.icon}
+            <ListItemText sx={{ ml: 2 }} primary={item.label} />
           </ListItemButton>
-        );
-      }
-    };
+        ))}
+        {/* Sections with expand/collapse */}
+        {settingsSections.map(section => {
+          const isExpanded = expandedSections[section.heading] || false;
+          return (
+            <React.Fragment key={section.heading}>
+              <ListItemButton
+                onClick={() => toggleSection(section.heading)}
+                sx={{ borderRadius: 2, mb: 0.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+              >
+                {section.icon}
+                <ListItemText sx={{ ml: 2 }} primary={section.heading} />
+                {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </ListItemButton>
+              <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {section.items.map(item => (
+                    <ListItemButton
+                      key={item.key}
+                      onClick={() => openSettingsPage(item.key)}
+                      sx={{
+                        pl: 4,
+                        borderRadius: 2,
+                        mb: 0.5,
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                      }}
+                    >
+                      {item.icon}
+                      <ListItemText sx={{ ml: 2 }} primary={item.label} />
+                    </ListItemButton>
+                  ))}
+                </List>
+              </Collapse>
+            </React.Fragment>
+          );
+        })}
+      </List>
+    </Drawer>
+  );
 
-    return (
-      <Drawer
-        anchor="left"
-        open={mobileDrawerOpen}
-        onClose={() => setMobileDrawerOpen(false)}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            width: 280,
-            background: "linear-gradient(180deg, #6495ED 100%, #4169E1 100%)",
-            color: "#fff",
-            p: 2,
-          },
-        }}
-      >
-        <Box sx={{ p: 2, fontWeight: "bold", fontSize: 18 }}>
-          <DashboardIcon sx={{ fontSize: 18, mr: 1 }} /> Main Dashboard
-        </Box>
-        <List>
-          <ListItemButton sx={{ borderRadius: 2, mb: 1 }}>
-            <ListItemText primary="Bustracking system" />
+  // ---------- Desktop mini-drawer ----------
+  const SettingsMiniDrawer = () => (
+    <Box
+      onMouseEnter={() => setHoverOpen(true)}
+      onMouseLeave={() => setHoverOpen(false)}
+      sx={{
+        position: "absolute",
+        width: hoverOpen ? fullWidth : miniWidth,
+        left: drawerWidth + 25,
+        transition: "0.3s",
+        background: "linear-gradient(180deg, #6495ED 100%, #4169E1 100%)",
+        borderRadius: "30px",
+        mt: 15,
+        height: "100%",
+        overflow: "scroll",
+        boxShadow: "4px 0 12px rgba(0,0,0,0.15)",
+        zIndex: 1,
+        display: { xs: 'none', md: 'block' },
+        p: hoverOpen ? 1 : 0.5,
+      }}
+    >
+      <List sx={{ display: "flex", flexDirection: "column", gap: hoverOpen ? 0.3 : 0.3 }}>
+        {/* Top-level items */}
+        {topLevelItems.map(item => (
+          <ListItemButton
+            key={item.key}
+            sx={menuItemStyle}
+            onClick={() => openSettingsPage(item.key)}
+          >
+            {item.icon}
+            {hoverOpen && <ListItemText sx={{ ml: 2 }} primary={item.label} />}
           </ListItemButton>
-        </List>
-        <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, opacity: 0.7 }}>
-          Settings
-        </Typography>
-        <List>
-          {settingsMenuData.map(item => renderMobileItem(item))}
-        </List>
-      </Drawer>
-    );
-  };
+        ))}
+        {/* Sections */}
+        {settingsSections.map(section => {
+          const isExpanded = expandedSections[section.heading] || false;
+          return (
+            <React.Fragment key={section.heading}>
+              <ListItemButton
+                sx={menuItemStyle}
+                onClick={() => toggleSection(section.heading)}
+              >
+                {section.icon}
+                {hoverOpen && (
+                  <>
+                    <ListItemText sx={{ ml: 2 }} primary={section.heading} />
+                    {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                  </>
+                )}
+              </ListItemButton>
+              {hoverOpen && (
+                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {section.items.map(item => (
+                      <ListItemButton
+                        key={item.key}
+                        sx={{
+                          ...menuItemStyle,
+                          pl: 3,
+                          py: 0.8,
+                        }}
+                        onClick={() => openSettingsPage(item.key)}
+                      >
+                        {item.icon}
+                        <ListItemText sx={{ ml: 2 }} primary={item.label} />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Collapse>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </List>
+    </Box>
+  );
 
-  // ================= MAIN RENDER =================
+  // ---------- Main render ----------
   return (
     <Box sx={{ display: "flex", bgcolor: "#f4f6f8", minHeight: "100vh" }}>
-      {/* Mobile AppBar */}
+      {/* AppBar for mobile/tablet */}
       <AppBar
         position="fixed"
         sx={{
@@ -335,11 +324,7 @@ export default function Navigation() {
         }}
       >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={() => setMobileDrawerOpen(true)}
-          >
+          <IconButton color="inherit" edge="start" onClick={() => setMobileDrawerOpen(true)}>
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" sx={{ flexGrow: 1, ml: 1 }}>
@@ -351,7 +336,6 @@ export default function Navigation() {
         </Toolbar>
       </AppBar>
 
-      {/* Mobile Drawer */}
       <MobileDrawer />
 
       {/* Desktop Left Drawer */}
@@ -380,30 +364,7 @@ export default function Navigation() {
       </Drawer>
 
       {/* Settings Mini Drawer - Desktop only */}
-      {settingsOpen && !isMobile && (
-        <Box
-          onMouseEnter={() => setHoverOpen(true)}
-          onMouseLeave={() => setHoverOpen(false)}
-          sx={{
-            position: "absolute",
-            width: hoverOpen ? fullWidth : miniWidth,
-            left: drawerWidth + 25,
-            transition: "0.3s",
-            background: "linear-gradient(180deg, #6495ED 100%, #4169E1 100%)",
-            borderRadius: "30px",
-            mt: 15,
-            height: "100%",
-            overflow: "scroll",
-            boxShadow: "4px 0 12px rgba(0,0,0,0.15)",
-            zIndex: 1,
-            display: { xs: 'none', md: 'block' },
-          }}
-        >
-          <List sx={{ display: "flex", flexDirection: "column", gap: hoverOpen ? 0.3 : 0.3 }}>
-            {settingsMenuData.map(item => renderMenuItem(item))}
-          </List>
-        </Box>
-      )}
+      {settingsOpen && !isMobile && <SettingsMiniDrawer />}
 
       {/* MAIN CONTENT */}
       <Box sx={{
@@ -429,8 +390,8 @@ export default function Navigation() {
             scrollButtons={isMobile ? "auto" : false}
             allowScrollButtonsMobile
             centered={!isMobile}
-            TabIndicatorProps={{ style: { display: "none" } }}
             sx={{
+              '& .MuiTabs-indicator': { display: 'none' },
               minHeight: { xs: 48, sm: 56 },
               "& .MuiTab-root": {
                 mx: { xs: 0.5, sm: 1, md: 7 },
@@ -444,9 +405,7 @@ export default function Navigation() {
                 fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' },
                 minWidth: { xs: 'auto', sm: 'auto' },
               },
-              "& .MuiTab-root:hover": {
-                bgcolor: "rgba(255,255,255,0.2)",
-              },
+              "& .MuiTab-root:hover": { bgcolor: "rgba(255,255,255,0.2)" },
               "& .Mui-selected": {
                 bgcolor: "#ffffff !important",
                 color: "#000000 !important",
@@ -455,79 +414,93 @@ export default function Navigation() {
               },
             }}
           >
-            {[
-              "Dashboard",
-              "Student",
-              "Payment",
-              "Bustrip",
-              "Collection",
-              "Feedback",
-              "Settings",
-            ].map((label, i) => (
+            {["Dashboard", "Student", "Payment", "Bustrip", "Collection", "Feedback", "Settings"].map((label, i) => (
               <Tab key={i} label={label} disableRipple />
             ))}
           </Tabs>
         </Paper>
 
         {!settingsOpen && (
-          <Box
-            sx={{
-              bgcolor: "#fff",
-              borderRadius: { xs: 2, sm: 3, md: 3 },
-              p: { xs: 1.5, sm: 2, md: 3 },
-              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-              overflow: 'auto',
-            }}
-          >
-            {tab === 0 && <Dashboard />}
-            {tab === 1 && <Student />}
+          <Box sx={{
+            bgcolor: "#fff",
+            borderRadius: { xs: 2, sm: 3, md: 3 },
+            p: { xs: 1.5, sm: 2, md: 3 },
+            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            overflow: 'auto',
+          }}>
+            {tab === 0 && <Dashboard/>}
+            {tab === 1 && <Student/>}
             {tab === 2 && <Typography>Payment Page</Typography>}
-            {tab === 3 && <Bustrip />}
+            {tab === 3 && <BusTrip/>}
             {tab === 4 && <Typography>Collection Page</Typography>}
             {tab === 5 && <Typography>Feedback Page</Typography>}
           </Box>
         )}
 
         {settingsOpen && settingsPage && (
-          <Box
-            sx={{
-              position: { xs: 'static', md: 'absolute' },
-              top: { md: 130 },
-              left: isMobile ? 0 : (settingsOpen ? drawerWidth + (hoverOpen ? fullWidth : miniWidth) + 25 + FORM_GAP : 0),
-              right: { xs: 0, md: 20 },
-              bottom: { xs: 0, md: 'auto' },
-              bgcolor: "#fff",
-              borderRadius: { xs: 2, sm: 3, md: 4 },
-              p: { xs: 1.5, sm: 2, md: 3 },
-              boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
-              zIndex: { xs: 1, md: 2 },
-              overflow: "auto",
-              maxHeight: { xs: 'calc(100vh - 120px)', md: "80vh" },
-              transition: "0.3s",
-              width: { xs: '100%', sm: 'calc(100% - 20px)', md: 'auto' },
-              mx: { xs: 1, sm: 2, md: 0 },
-            }}
-          >
+          <Box sx={{
+            position: { xs: 'static', md: 'absolute' },
+            top: { md: 130 },
+            left: isMobile ? 0 : (settingsOpen ? drawerWidth + (hoverOpen ? fullWidth : miniWidth) + 25 + FORM_GAP : 0),
+            right: { xs: 0, md: 20 },
+            bottom: { xs: 0, md: 'auto' },
+            bgcolor: "#fff",
+            borderRadius: { xs: 2, sm: 3, md: 4 },
+            p: { xs: 1.5, sm: 2, md: 3 },
+            boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+            zIndex: { xs: 1, md: 2 },
+            overflow: "auto",
+            maxHeight: { xs: 'calc(100vh - 120px)', md: "80vh" },
+            transition: "0.3s",
+            width: { xs: '100%', sm: 'calc(100% - 20px)', md: 'auto' },
+            mx: { xs: 1, sm: 2, md: 0 },
+          }}>
+            {settingsPage === "service" && <ServiceProvider />}
             {settingsPage === "bus" && <Bus />}
-            {settingsPage === "busroute" && <Busroute />}
-            {settingsPage === "busstop" && <BusStop />}
             {settingsPage === "driver" && <Driver />}
             {settingsPage === "conductor" && <Conductor />}
-            {settingsPage === "service" && <ServiceProvider />}
-            {settingsPage === "class" && <Class />}
-            {settingsPage === "division" && <Division />}
-            {settingsPage === "medium" && <Medium />}
-            {settingsPage === "academic" && <AcademicYear />}
-            {settingsPage === "studentfee" && <StudentFee />}
-            {settingsPage === "studentsignup" && <StudentSignUp />}
-            {settingsPage === "signin" && <SignIn />}
-            {settingsPage === "driversignup" && <DriverSignUp />}
-            {settingsPage === "conductorsignup" && <ConductorSignUp />}
-            {settingsPage === "buslocation" && <BusLocation/>}
-            {settingsPage === "busdetail" && <BusDetail/>}
-            {settingsPage === "routedetail" && <RouteDetail/>}
-            {settingsPage === "routestop" && <RouteStop/>}
-            {settingsPage === "bussupplier" && <BusSupplier/>}
+            {settingsPage === "busstop" && <BusStop />}
+            {settingsPage === "busroute" && <BusRoute />}
+            {settingsPage === "buslocation" && <BusLocation />}
+            {settingsPage === "class" && <Class/>}
+            {settingsPage === "academic" && <AcademicYear/>}
+            {settingsPage === "division" && <Division/>}
+            {settingsPage === "medium" && <Medium/>}
+            {settingsPage === "scan" && <Scan/>}
+            {settingsPage === "studentfeepayment" && <StudentFeePayment/>}
+          </Box>
+        )}
+
+        {/* Arrow hint for mobile/tablet */}
+        {showArrowHint && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 60,
+              left: 10,
+              zIndex: 1400,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              animation: `${pulse} 1.5s ease-in-out infinite`,
+              cursor: 'pointer',
+            }}
+            onClick={() => setMobileDrawerOpen(true)}
+          >
+            <ArrowForwardIosIcon sx={{ fontSize: 24, color: '#f59e0b', transform: 'rotate(180deg)' }} />
+            <Typography variant="caption" sx={{
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              color: '#fff',
+              px: 1.5,
+              py: 0.5,
+              borderRadius: 1,
+              fontWeight: 600,
+              fontSize: '0.7rem',
+              whiteSpace: 'nowrap',
+              backdropFilter: 'blur(4px)',
+            }}>
+              Tap ☰ to choose
+            </Typography>
           </Box>
         )}
       </Box>

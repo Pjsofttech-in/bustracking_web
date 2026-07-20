@@ -1,35 +1,26 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- ✅ Import map must be first -->
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react?dev",
+          "react-dom": "https://esm.sh/react-dom?dev"
+        }
+      }
+    </script>
+
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>btsweb</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-    />
-    <!-- Tailwind via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>My App</title>
+
+    <!-- These now come after importmap -->
+    <link rel="modulepreload" href="/assets/vendor.js" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-      <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0"
-      }
-    }
-  </script>
-  <script type="module">
-    
-   
-
-    // ---------- MOCK API (simulate Spring Boot) ----------
-  
-
-  </script>
   </body>
 </html>
