@@ -1,9 +1,8 @@
 // src/api/axios.js
 import axios from "axios";
 
-// Get the base URL from environment or use default
-// const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://pjsofttech.in:9090";
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://pjsofttech.com";
 
 const api = axios.create({
   baseURL: BASE_URL,

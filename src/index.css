@@ -1,3 +1,133 @@
+
+
+/* src/index.css – Tailwind + base styles */
+
+
+
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Your custom styles below */
+
+/* ===== GLOBAL RESET ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f8fafc;
+  color: #0f172a;
+  line-height: 1.5;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ===== MAP PREVIEW ===== */
+.map-preview {
+  background: linear-gradient(145deg, #e2e8f0 0%, #f1f5f9 100%);
+  background-image:
+    radial-gradient(circle at 20% 30%, #cbd5e1 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, #cbd5e1 1px, transparent 1px);
+  background-size: 40px 40px, 60px 60px;
+}
+
+/* ===== RESPONSIVE UTILITY ===== */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Safe area padding for notched phones */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out forwards;
+}
+
+/* ===== CARD HOVER ===== */
+.hover-card {
+  transition: all 0.2s ease;
+}
+.hover-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== RESPONSIVE FONT CLAMPS ===== */
+.text-clamp-xs {
+  font-size: clamp(0.5rem, 1.2vw, 0.65rem);
+}
+.text-clamp-sm {
+  font-size: clamp(0.6rem, 1.4vw, 0.75rem);
+}
+.text-clamp-base {
+  font-size: clamp(0.7rem, 1.6vw, 0.875rem);
+}
+.text-clamp-lg {
+  font-size: clamp(0.85rem, 2vw, 1.1rem);
+}
+.text-clamp-xl {
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
+}
+.text-clamp-2xl {
+  font-size: clamp(1.2rem, 3vw, 1.75rem);
+}
