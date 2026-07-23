@@ -1,29 +1,29 @@
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  base: '/',
   server: {
     port: 5173,
     proxy: {
-      '/bus': { target: 'https://pjsofttech.com', changeOrigin: true },
-      '/service-providers': { target: 'https://pjsofttech', changeOrigin: true },
-      '/drivers': { target: 'https://pjsofttech.com', changeOrigin: true },
-      '/conductors': { target: 'https://pjsofttech.com', changeOrigin: true },
-      '/bus-stops': { target: 'https://pjsofttech.com', changeOrigin: true },
-      '/bus-routes': { target: 'https://pjsofttech.com', changeOrigin: true },
-      '/bus-locations': { target: 'https://pjsofttech.com', changeOrigin: true },
-      '/academic-years': { target: 'https://pjsofttech.com', changeOrigin: true, secure: false },
-      '/classes': { target: 'https://pjsofttech.com', changeOrigin: true, secure: false },
-      '/mediums': { target: 'https://pjsofttech.com', changeOrigin: true, secure: false },
-      '/divisions': { target: 'https://pjsofttech.com', changeOrigin: true, secure: false },
-      '/students': { target: 'https://pjsofttech.com', changeOrigin: true, secure: false },
-      '/student-fees': { target: 'https://pjsofttech.com', changeOrigin: true, secure: false },
-      '/student-scans': { target: 'https://pjsofttech.com', changeOrigin: true, secure: false },
-      '/bus-trips': { target: 'https://pjsofttech.com', changeOrigin: true, secure: false },
-      '/dashboard': { target: 'https://pjsofttech.com', changeOrigin: true, secure: false },
-
+      // Local backend for development
+      '/bus': { target: 'http://localhost:8080', changeOrigin: true },
+      '/service-providers': { target: 'http://localhost:8080', changeOrigin: true },
+      '/drivers': { target: 'http://localhost:8080', changeOrigin: true },
+      '/conductors': { target: 'http://localhost:8080', changeOrigin: true },
+      '/bus-stops': { target: 'http://localhost:8080', changeOrigin: true },
+      '/bus-routes': { target: 'http://localhost:8080', changeOrigin: true },
+      '/bus-locations': { target: 'http://localhost:8080', changeOrigin: true },
+      '/academic-years': { target: 'http://localhost:8080', changeOrigin: true },
+      '/classes': { target: 'http://localhost:8080', changeOrigin: true },
+      '/mediums': { target: 'http://localhost:8080', changeOrigin: true },
+      '/divisions': { target: 'http://localhost:8080', changeOrigin: true },
+      '/students': { target: 'http://localhost:8080', changeOrigin: true },
+      '/student-fees': { target: 'http://localhost:8080', changeOrigin: true },
+      '/student-scans': { target: 'http://localhost:8080', changeOrigin: true },
+      '/bus-trips': { target: 'http://localhost:8080', changeOrigin: true },
+      '/dashboard': { target: 'http://localhost:8080', changeOrigin: true },
     }
   },
   build: {
@@ -40,5 +40,8 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 1000,
-  }
+    sourcemap: false,
+    minify: 'esbuild',
+    target: 'es2020',
+  },
 });

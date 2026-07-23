@@ -1,13 +1,14 @@
-// src/api/dashboardApi.js
-import api from "./axios";
+import api from './axios';
 
+// ✅ Named export (used by Dashboard.jsx)
 export const getDashboardData = async () => {
-  const response = await api.get("/dashboard");
+  const response = await api.get('/dashboard');
   return response.data;
 };
 
+// ✅ Default export (for convenience)
 const dashboardApi = {
   getDashboard: getDashboardData,
 };
 
-export default dashboardApi;   // ← MUST have this line
+export default dashboardApi;
