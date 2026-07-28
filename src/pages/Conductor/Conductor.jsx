@@ -45,6 +45,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import DriveEtaIcon from "@mui/icons-material/DriveEta";
 import EmailIcon from "@mui/icons-material/Email";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import SearchIcon from "@mui/icons-material/Search";          // <-- added
 import { styled } from "@mui/material/styles";
 import conductorApi from "../../api/conductorApi";
 
@@ -89,11 +90,12 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
-// ✅ UPDATED TABLE CONTAINER – increased height
+// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 280px)",
   minHeight: "400px",
   width: "100%",
+  overflowX: "auto",
   '&::-webkit-scrollbar': { width: '6px', height: '6px' },
   '&::-webkit-scrollbar-track': { backgroundColor: '#f1f5f9', borderRadius: '4px' },
   '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px', '&:hover': { backgroundColor: '#94a3b8' } },
@@ -150,24 +152,101 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
+// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
-  borderRadius: "12px",
-  padding: "10px 24px",
+  borderRadius: "10px",
+  padding: "6px 16px",
   fontWeight: 600,
   textTransform: "none",
-  fontSize: "0.95rem",
+  fontSize: "0.8rem",
   backgroundColor: "#6495ED",
-  boxShadow: "0 4px 12px rgba(100, 149, 237, 0.3)",
+  boxShadow: "0 2px 8px rgba(100, 149, 237, 0.25)",
   transition: "all 0.3s ease",
   flexShrink: 0,
-  '&:hover': { backgroundColor: "#4169E1", transform: "translateY(-2px)", boxShadow: "0 6px 20px rgba(65, 105, 225, 0.4)" },
-  [theme.breakpoints.down('md')]: { padding: "8px 18px", fontSize: "0.85rem" },
-  [theme.breakpoints.down('sm')]: { width: "100%", padding: "10px 16px", fontSize: "0.85rem", justifyContent: "center" },
-  [theme.breakpoints.down('xs')]: { padding: "8px 12px", fontSize: "0.8rem", borderRadius: "10px" },
-  '@media (max-width: 380px)': { padding: "6px 10px", fontSize: "0.75rem", borderRadius: "8px" }
+  '&:hover': { backgroundColor: "#4169E1", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(65, 105, 225, 0.35)" },
+  [theme.breakpoints.down('md')]: { padding: "5px 12px", fontSize: "0.75rem" },
+  [theme.breakpoints.down('sm')]: { width: "100%", padding: "8px 12px", fontSize: "0.8rem", justifyContent: "center" },
+  [theme.breakpoints.down('xs')]: { padding: "6px 10px", fontSize: "0.7rem", borderRadius: "8px" },
+  '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
 }));
 
-// ❌ StatsCard component removed – no longer used
+// ---- Inline Stats (adjustable size) ----
+const InlineStats = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  flexWrap: "wrap",
+  [theme.breakpoints.down('sm')]: { gap: theme.spacing(1) },
+  '& .stat-chip': {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    backgroundColor: "#f1f5f9",
+    borderRadius: "20px",
+    padding: "4px 14px",
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "#1e293b",
+    [theme.breakpoints.down('sm')]: { fontSize: "0.7rem", padding: "2px 10px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.65rem", padding: "2px 8px" },
+    '& .num': {
+      fontWeight: 700,
+      color: "#6495ED",
+      marginLeft: "2px",
+    },
+    '&.active .num': { color: "#22c55e" },
+    '&.suspended .num': { color: "#d97706" },
+    '&.terminated .num': { color: "#dc2626" },
+  }
+}));
+
+// ---- Filter input (white background, tiny) ----
+const FilterInput = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#ffffff',
+    borderRadius: '4px',
+    color: '#1e293b',
+    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
+    '&:hover fieldset': { borderColor: '#6495ED' },
+    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
+    '& input': {
+      padding: '2px 6px',
+      fontSize: '0.6rem',
+      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
+      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
+      '&::placeholder': {
+        color: 'rgba(0,0,0,0.4)',
+        opacity: 1
+      }
+    }
+  },
+  '& .MuiInputAdornment-root': {
+    marginRight: '2px',
+    '& svg': {
+      fontSize: '0.7rem',
+      color: '#94a3b8'
+    }
+  },
+  width: '100%',
+  minWidth: '40px',
+}));
+
+// ---- Mobile search field ----
+const MobileSearchField = styled(TextField)(({ theme }) => ({
+  flex: 1,
+  '& .MuiOutlinedInput-root': {
+    borderRadius: "10px",
+    backgroundColor: "#fff",
+    '&:hover fieldset': { borderColor: "#6495ED" },
+    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
+    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
+    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
+  },
+  '& .MuiInputBase-input': {
+    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
+  },
+}));
 
 const MobileCard = styled(Card)(({ theme }) => ({
   borderRadius: "12px",
@@ -236,6 +315,26 @@ export default function Conductor() {
   };
 
   const [conductors, setConductors] = useState([]);
+  const [filteredConductors, setFilteredConductors] = useState([]);
+  // ---- Per‑column filters (desktop) ----
+  const [filters, setFilters] = useState({
+    id: "",
+    name: "",
+    phone: "",
+    email: "",
+    licenseNumber: "",
+    licenseType: "",
+    licenseExpiryDate: "",
+    experienceYears: "",
+    status: "",
+    joiningDate: "",
+    terminateDate: "",
+    city: "",
+    state: ""
+  });
+  // ---- Mobile global search ----
+  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
+
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -250,15 +349,22 @@ export default function Conductor() {
     severity: "success"
   });
 
+  // ================= SORTING HELPER (descending ID) =================
+  const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
+
   // ================= LOAD CONDUCTORS =================
   const loadConductors = async () => {
     setLoading(true);
     try {
       const data = await conductorApi.getAllConductors();
-      setConductors(data);
+      const sorted = sortByIdDesc(Array.isArray(data) ? data : []);
+      setConductors(sorted);
+      setFilteredConductors(sorted);
     } catch (error) {
       console.error('Error fetching conductors:', error);
       showSnackbar(error.message || "Failed to load conductors", "error");
+      setConductors([]);
+      setFilteredConductors([]);
     } finally {
       setLoading(false);
     }
@@ -267,6 +373,55 @@ export default function Conductor() {
   useEffect(() => {
     loadConductors();
   }, []);
+
+  // ================= FILTERING LOGIC =================
+  useEffect(() => {
+    let filtered = conductors;
+
+    const matches = (val, filter) => {
+      if (!filter) return true;
+      if (val == null) return false;
+      return String(val).toLowerCase().includes(filter.toLowerCase());
+    };
+
+    filtered = filtered.filter(c =>
+      matches(c.id, filters.id) &&
+      matches(c.name, filters.name) &&
+      matches(c.phone, filters.phone) &&
+      matches(c.email, filters.email) &&
+      matches(c.licenseNumber, filters.licenseNumber) &&
+      matches(c.licenseType, filters.licenseType) &&
+      matches(c.licenseExpiryDate, filters.licenseExpiryDate) &&
+      matches(c.experienceYears, filters.experienceYears) &&
+      matches(c.status, filters.status) &&
+      matches(c.joiningDate, filters.joiningDate) &&
+      matches(c.terminateDate, filters.terminateDate) &&
+      matches(c.city, filters.city) &&
+      matches(c.state, filters.state)
+    );
+
+    // Mobile global search (extra)
+    if (isMobile && mobileSearchTerm.trim()) {
+      const term = mobileSearchTerm.toLowerCase().trim();
+      filtered = filtered.filter(c =>
+        matches(c.id, term) ||
+        matches(c.name, term) ||
+        matches(c.phone, term) ||
+        matches(c.email, term) ||
+        matches(c.licenseNumber, term) ||
+        matches(c.licenseType, term) ||
+        matches(c.licenseExpiryDate, term) ||
+        matches(c.experienceYears, term) ||
+        matches(c.status, term) ||
+        matches(c.joiningDate, term) ||
+        matches(c.terminateDate, term) ||
+        matches(c.city, term) ||
+        matches(c.state, term)
+      );
+    }
+
+    setFilteredConductors(filtered);
+  }, [conductors, filters, mobileSearchTerm, isMobile]);
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
@@ -289,6 +444,15 @@ export default function Conductor() {
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  // Filter handlers
+  const handleFilterChange = (field) => (e) => {
+    setFilters(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleMobileSearchChange = (e) => {
+    setMobileSearchTerm(e.target.value);
   };
 
   const handleAddOpen = () => {
@@ -404,11 +568,15 @@ export default function Conductor() {
       let result;
       if (isAddMode) {
         result = await conductorApi.createConductor(payload);
-        setConductors(prev => [...prev, result]);
+        const updated = sortByIdDesc([...conductors, result]);
+        setConductors(updated);
+        setFilteredConductors(updated);
         showSnackbar("Conductor added successfully!", "success");
       } else {
         result = await conductorApi.updateConductor(selectedId, payload);
-        setConductors(prev => prev.map(c => c.id === selectedId ? result : c));
+        const updated = sortByIdDesc(conductors.map(c => c.id === selectedId ? result : c));
+        setConductors(updated);
+        setFilteredConductors(updated);
         showSnackbar("Conductor updated successfully!", "success");
       }
       handleCloseDialog();
@@ -426,7 +594,9 @@ export default function Conductor() {
     setSubmitting(true);
     try {
       await conductorApi.deleteConductor(selectedId);
-      setConductors(conductors.filter(c => c.id !== selectedId));
+      const updated = sortByIdDesc(conductors.filter(c => c.id !== selectedId));
+      setConductors(updated);
+      setFilteredConductors(updated);
       showSnackbar("Conductor deleted successfully!", "success");
       setConfirmOpen(false);
       handleCloseDialog();
@@ -607,49 +777,103 @@ export default function Conductor() {
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header – reduced margin bottom */}
-          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "stretch", sm: "center" }, gap: { xs: 1.5, sm: 2, md: 3 }, mb: { xs: 2, sm: 2, md: 2 } }}>
-            <Box>
-              <Typography variant="h5" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1.1rem", sm: "1.3rem", md: "1.5rem" }, color: "#1e293b", display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 } }}>
+          {/* Header with inline stats and smaller Add button */}
+          <Box sx={{ 
+            display: "flex", 
+            flexDirection: { xs: "column", sm: "row" }, 
+            justifyContent: "space-between", 
+            alignItems: { xs: "stretch", sm: "center" }, 
+            gap: { xs: 1, sm: 2 }, 
+            mb: { xs: 2, sm: 2 } 
+          }}>
+            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: { xs: 1, sm: 2 } }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <PersonIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
-                <span>Conductors</span>
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.875rem" } }}>
-                Manage bus conductors and their details
-              </Typography>
+                <Typography variant="h6" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1rem", sm: "1.2rem", md: "1.4rem" }, color: "#1e293b" }}>
+                  Conductors
+                </Typography>
+              </Box>
+              {/* Inline stats */}
+              <InlineStats>
+                <span className="stat-chip">Total <span className="num">{conductors.length}</span></span>
+                <span className="stat-chip active">Active <span className="num">{conductors.filter(c => c.status === 'Join').length}</span></span>
+                <span className="stat-chip suspended">Suspended <span className="num">{conductors.filter(c => c.status === 'Suspended').length}</span></span>
+                <span className="stat-chip terminated">Terminated <span className="num">{conductors.filter(c => c.status === 'Terminated').length}</span></span>
+              </InlineStats>
             </Box>
-            <AddButton variant="contained" startIcon={<AddIcon />} onClick={handleAddOpen}>
+            <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={handleAddOpen}>
               Add Conductor
             </AddButton>
           </Box>
 
-          {/* ❌ Stats Cards REMOVED */}
-
-          {/* Table – increased height */}
+          {/* Table/List View */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
-                <Table stickyHeader>
+                <Table stickyHeader sx={{ minWidth: 1400 }}>  {/* force horizontal scroll */}
                   <GradientHeader>
+                    {/* Header row */}
                     <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Phone</TableCell>
-                      <TableCell>Email</TableCell>
-                      <TableCell>License #</TableCell>
-                      <TableCell>License Type</TableCell>
-                      <TableCell>License Exp</TableCell>
-                      <TableCell>Exp</TableCell>
-                      <TableCell align="center">Status</TableCell>
-                      <TableCell>Joining</TableCell>
-                      <TableCell>Terminated</TableCell>
-                      <TableCell>City</TableCell>
-                      <TableCell>State</TableCell>
+                      <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
+                      <TableCell sx={{ minWidth: '150px' }}>Name</TableCell>
+                      <TableCell sx={{ minWidth: '110px' }}>Phone</TableCell>
+                      <TableCell sx={{ minWidth: '160px' }}>Email</TableCell>
+                      <TableCell sx={{ minWidth: '120px' }}>License #</TableCell>
+                      <TableCell sx={{ minWidth: '130px' }}>License Type</TableCell>
+                      <TableCell sx={{ minWidth: '120px' }}>License Exp</TableCell>
+                      <TableCell sx={{ minWidth: '80px' }}>Exp</TableCell>
+                      <TableCell sx={{ minWidth: '90px' }} align="center">Status</TableCell>
+                      <TableCell sx={{ minWidth: '110px' }}>Joining</TableCell>
+                      <TableCell sx={{ minWidth: '110px' }}>Terminated</TableCell>
+                      <TableCell sx={{ minWidth: '120px' }}>City</TableCell>
+                      <TableCell sx={{ minWidth: '100px' }}>State</TableCell>
+                    </TableRow>
+                    {/* Filter row */}
+                    <TableRow>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Name" value={filters.name} onChange={handleFilterChange('name')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Phone" value={filters.phone} onChange={handleFilterChange('phone')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Email" value={filters.email} onChange={handleFilterChange('email')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter License" value={filters.licenseNumber} onChange={handleFilterChange('licenseNumber')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Type" value={filters.licenseType} onChange={handleFilterChange('licenseType')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Exp" value={filters.licenseExpiryDate} onChange={handleFilterChange('licenseExpiryDate')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Exp" value={filters.experienceYears} onChange={handleFilterChange('experienceYears')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Status" value={filters.status} onChange={handleFilterChange('status')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Joining" value={filters.joiningDate} onChange={handleFilterChange('joiningDate')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Term" value={filters.terminateDate} onChange={handleFilterChange('terminateDate')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter City" value={filters.city} onChange={handleFilterChange('city')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter State" value={filters.state} onChange={handleFilterChange('state')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
-                    {conductors.length > 0 ? (
-                      conductors.map(c => (
+                    {filteredConductors.length > 0 ? (
+                      filteredConductors.map(c => (
                         <StyledTableRow key={c.id} onClick={() => handleRowClick(c)}>
                           <TableCell sx={{ fontWeight: 600 }}>{c.id}</TableCell>
                           <TableCell><Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><PersonIcon sx={{ fontSize: 14, color: "#6495ED" }} />{c.name}</Box></TableCell>
@@ -667,35 +891,77 @@ export default function Conductor() {
                         </StyledTableRow>
                       ))
                     ) : (
-                      <TableRow><TableCell colSpan={13} align="center"><Typography>No conductors added yet</Typography><Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen}>Add first conductor</Button></TableCell></TableRow>
+                      <TableRow>
+                        <TableCell colSpan={13} align="center" sx={{ py: 4 }}>
+                          <Typography variant="body1" color="text.secondary">
+                            <PersonIcon sx={{ fontSize: 40, display: 'block', margin: '0 auto 8px', opacity: 0.3 }} />
+                            {Object.values(filters).some(f => f) ? "No conductors match your filters" : "No conductors added yet"}
+                          </Typography>
+                          {!Object.values(filters).some(f => f) && (
+                            <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2, borderRadius: "10px", textTransform: "none" }}>
+                              Add your first conductor
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
                     )}
                   </TableBody>
                 </Table>
               </StyledTableContainer>
             ) : (
-              <Box sx={{ p: 1 }}>
+              // Mobile Card View with global search
+              <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
+                <MobileSearchField
+                  fullWidth
+                  placeholder="Search all fields..."
+                  value={mobileSearchTerm}
+                  onChange={handleMobileSearchChange}
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
+                    endAdornment: mobileSearchTerm && (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
                 <Stack spacing={1.5}>
-                  {conductors.map(c => (
-                    <MobileCard key={c.id} onClick={() => handleRowClick(c)}>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Box><Typography variant="caption" color="text.secondary">Conductor #{c.id}</Typography><Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><PersonIcon sx={{ color: "#6495ED" }} />{c.name}</Typography></Box>
-                          <Chip label={c.status} size="small" sx={{ bgcolor: getStatusColor(c.status).bg, color: getStatusColor(c.status).color, fontWeight: 600 }} />
-                        </Box>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mt: 1 }}>
-                          <Box><Typography variant="caption" color="text.secondary">Phone</Typography><Typography variant="body2">{c.phone}</Typography></Box>
-                          <Box><Typography variant="caption" color="text.secondary">Email</Typography><Typography variant="body2">{c.email || 'N/A'}</Typography></Box>
-                          <Box><Typography variant="caption" color="text.secondary">License</Typography><Typography variant="body2">{c.licenseNumber}</Typography></Box>
-                          <Box><Typography variant="caption" color="text.secondary">License Exp</Typography><Typography variant="body2">{formatDate(c.licenseExpiryDate)}</Typography></Box>
-                          <Box><Typography variant="caption" color="text.secondary">Experience</Typography><Typography variant="body2">{c.experienceYears} years</Typography></Box>
-                          <Box><Typography variant="caption" color="text.secondary">Location</Typography><Typography variant="body2">{c.city}, {c.state}</Typography></Box>
-                        </Box>
-                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid #f1f5f9', textAlign: 'right' }}>
-                          <Typography variant="caption" color="text.secondary">Click to view details</Typography>
-                        </Box>
-                      </CardContent>
-                    </MobileCard>
-                  ))}
+                  {filteredConductors.length > 0 ? (
+                    filteredConductors.map(c => (
+                      <MobileCard key={c.id} onClick={() => handleRowClick(c)}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Box><Typography variant="caption" color="text.secondary">Conductor #{c.id}</Typography><Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><PersonIcon sx={{ color: "#6495ED" }} />{c.name}</Typography></Box>
+                            <Chip label={c.status} size="small" sx={{ bgcolor: getStatusColor(c.status).bg, color: getStatusColor(c.status).color, fontWeight: 600 }} />
+                          </Box>
+                          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mt: 1 }}>
+                            <Box><Typography variant="caption" color="text.secondary">Phone</Typography><Typography variant="body2">{c.phone}</Typography></Box>
+                            <Box><Typography variant="caption" color="text.secondary">Email</Typography><Typography variant="body2">{c.email || 'N/A'}</Typography></Box>
+                            <Box><Typography variant="caption" color="text.secondary">License</Typography><Typography variant="body2">{c.licenseNumber}</Typography></Box>
+                            <Box><Typography variant="caption" color="text.secondary">License Exp</Typography><Typography variant="body2">{formatDate(c.licenseExpiryDate)}</Typography></Box>
+                            <Box><Typography variant="caption" color="text.secondary">Experience</Typography><Typography variant="body2">{c.experienceYears} years</Typography></Box>
+                            <Box><Typography variant="caption" color="text.secondary">Location</Typography><Typography variant="body2">{c.city}, {c.state}</Typography></Box>
+                          </Box>
+                          <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid #f1f5f9', textAlign: 'right' }}>
+                            <Typography variant="caption" color="text.secondary">Click to view details</Typography>
+                          </Box>
+                        </CardContent>
+                      </MobileCard>
+                    ))
+                  ) : (
+                    <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
+                      <PersonIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
+                      <Typography variant="body1" color="text.secondary">
+                        {mobileSearchTerm ? `No conductors found matching "${mobileSearchTerm}"` : "No conductors added yet"}
+                      </Typography>
+                      {!mobileSearchTerm && (
+                        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
+                          Add first conductor
+                        </Button>
+                      )}
+                    </Box>
+                  )}
                 </Stack>
               </Box>
             )}

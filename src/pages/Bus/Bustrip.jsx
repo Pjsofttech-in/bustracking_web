@@ -46,6 +46,7 @@ import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import RouteIcon from "@mui/icons-material/Route";
 import PersonIcon from "@mui/icons-material/Person";
 import ScheduleIcon from "@mui/icons-material/Schedule";
+import SearchIcon from "@mui/icons-material/Search";
 import { styled } from "@mui/material/styles";
 
 // ================= STYLED COMPONENTS =================
@@ -89,18 +90,20 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
+// ---- Table container with horizontal scroll and increased height ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
-  maxHeight: "calc(100vh - 400px)",
-  minHeight: "300px",
+  maxHeight: "calc(100vh - 180px)",   // Reduced subtraction → taller table
+  minHeight: "500px",                 // Increased minimum height
   width: "100%",
+  overflowX: "auto",
   '&::-webkit-scrollbar': { width: '6px', height: '6px' },
   '&::-webkit-scrollbar-track': { backgroundColor: '#f1f5f9', borderRadius: '4px' },
   '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px', '&:hover': { backgroundColor: '#94a3b8' } },
   scrollBehavior: "smooth",
-  [theme.breakpoints.down('md')]: { maxHeight: "calc(100vh - 380px)", minHeight: "250px" },
-  [theme.breakpoints.down('sm')]: { maxHeight: "calc(100vh - 350px)", minHeight: "200px" },
-  [theme.breakpoints.down('xs')]: { maxHeight: "calc(100vh - 320px)", minHeight: "150px", '&::-webkit-scrollbar': { width: '4px', height: '4px' } },
-  '@media (max-width: 380px)': { maxHeight: "calc(100vh - 300px)", minHeight: "120px" }
+  [theme.breakpoints.down('md')]: { maxHeight: "calc(100vh - 160px)", minHeight: "400px" },
+  [theme.breakpoints.down('sm')]: { maxHeight: "calc(100vh - 140px)", minHeight: "300px" },
+  [theme.breakpoints.down('xs')]: { maxHeight: "calc(100vh - 120px)", minHeight: "250px", '&::-webkit-scrollbar': { width: '4px', height: '4px' } },
+  '@media (max-width: 380px)': { maxHeight: "calc(100vh - 100px)", minHeight: "200px" }
 }));
 
 const GradientHeader = styled(TableHead)(({ theme }) => ({
@@ -148,34 +151,100 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
+// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
-  borderRadius: "12px",
-  padding: "10px 24px",
+  borderRadius: "10px",
+  padding: "6px 16px",
   fontWeight: 600,
   textTransform: "none",
-  fontSize: "0.95rem",
+  fontSize: "0.8rem",
   backgroundColor: "#6495ED",
-  boxShadow: "0 4px 12px rgba(100, 149, 237, 0.3)",
+  boxShadow: "0 2px 8px rgba(100, 149, 237, 0.25)",
   transition: "all 0.3s ease",
   flexShrink: 0,
-  '&:hover': { backgroundColor: "#4169E1", transform: "translateY(-2px)", boxShadow: "0 6px 20px rgba(65, 105, 225, 0.4)" },
-  [theme.breakpoints.down('md')]: { padding: "8px 18px", fontSize: "0.85rem" },
-  [theme.breakpoints.down('sm')]: { width: "100%", padding: "10px 16px", fontSize: "0.85rem", justifyContent: "center" },
-  [theme.breakpoints.down('xs')]: { padding: "8px 12px", fontSize: "0.8rem", borderRadius: "10px" },
-  '@media (max-width: 380px)': { padding: "6px 10px", fontSize: "0.75rem", borderRadius: "8px" }
+  '&:hover': { backgroundColor: "#4169E1", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(65, 105, 225, 0.35)" },
+  [theme.breakpoints.down('md')]: { padding: "5px 12px", fontSize: "0.75rem" },
+  [theme.breakpoints.down('sm')]: { width: "100%", padding: "8px 12px", fontSize: "0.8rem", justifyContent: "center" },
+  [theme.breakpoints.down('xs')]: { padding: "6px 10px", fontSize: "0.7rem", borderRadius: "8px" },
+  '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
 }));
 
-const StatsCard = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  borderRadius: "12px",
-  border: "1px solid #f1f5f9",
-  boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-  transition: "all 0.2s ease",
-  '&:hover': { borderColor: "#6495ED", boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)" },
-  [theme.breakpoints.down('md')]: { padding: theme.spacing(1.5) },
-  [theme.breakpoints.down('sm')]: { padding: theme.spacing(1.2), borderRadius: "10px" },
-  [theme.breakpoints.down('xs')]: { padding: theme.spacing(1), borderRadius: "8px" },
-  '@media (max-width: 380px)': { padding: theme.spacing(0.75), borderRadius: "6px" }
+// ---- Inline Stats (adjustable size) ----
+const InlineStats = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  flexWrap: "wrap",
+  [theme.breakpoints.down('sm')]: { gap: theme.spacing(1) },
+  '& .stat-chip': {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    backgroundColor: "#f1f5f9",
+    borderRadius: "20px",
+    padding: "4px 14px",
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "#1e293b",
+    [theme.breakpoints.down('sm')]: { fontSize: "0.7rem", padding: "2px 10px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.65rem", padding: "2px 8px" },
+    '& .num': {
+      fontWeight: 700,
+      color: "#6495ED",
+      marginLeft: "2px",
+    },
+    '&.ongoing .num': { color: "#22c55e" },
+    '&.scheduled .num': { color: "#6495ED" },
+    '&.completed .num': { color: "#d97706" },
+  }
+}));
+
+// ---- Filter input (white background, tiny) ----
+const FilterInput = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#ffffff',
+    borderRadius: '4px',
+    color: '#1e293b',
+    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
+    '&:hover fieldset': { borderColor: '#6495ED' },
+    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
+    '& input': {
+      padding: '2px 6px',
+      fontSize: '0.6rem',
+      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
+      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
+      '&::placeholder': {
+        color: 'rgba(0,0,0,0.4)',
+        opacity: 1
+      }
+    }
+  },
+  '& .MuiInputAdornment-root': {
+    marginRight: '2px',
+    '& svg': {
+      fontSize: '0.7rem',
+      color: '#94a3b8'
+    }
+  },
+  width: '100%',
+  minWidth: '40px',
+}));
+
+// ---- Mobile search field ----
+const MobileSearchField = styled(TextField)(({ theme }) => ({
+  flex: 1,
+  '& .MuiOutlinedInput-root': {
+    borderRadius: "10px",
+    backgroundColor: "#fff",
+    '&:hover fieldset': { borderColor: "#6495ED" },
+    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
+    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
+    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
+  },
+  '& .MuiInputBase-input': {
+    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
+  },
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -228,12 +297,12 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 export default function BusTrip() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isExtraSmall = useMediaQuery('(max-width: 380px)');
 
   const [open, setOpen] = useState(false);
   const [trips, setTrips] = useState([]);
+  const [filteredTrips, setFilteredTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -243,6 +312,20 @@ export default function BusTrip() {
     message: "",
     severity: "success"
   });
+
+  // ---- Per‑column filters (desktop) ----
+  const [filters, setFilters] = useState({
+    id: "",
+    bus: "",
+    route: "",
+    driver: "",
+    conductor: "",
+    startTime: "",
+    endTime: "",
+    status: ""
+  });
+  // ---- Mobile global search ----
+  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
 
   const [drivers, setDrivers] = useState([]);
   const [conductors, setConductors] = useState([]);
@@ -261,6 +344,9 @@ export default function BusTrip() {
 
   const statusOptions = ["SCHEDULED", "ONGOING", "COMPLETED", "CANCELLED"];
 
+  // ================= SORTING HELPER (descending ID) =================
+  const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
+
   // ================= LOAD DATA =================
   const loadData = async () => {
     setLoading(true);
@@ -272,7 +358,9 @@ export default function BusTrip() {
         driverApi.getAllDrivers().catch(() => []),
         conductorApi.getAllConductors().catch(() => [])
       ]);
-      setTrips(tripsData);
+      const sortedTrips = sortByIdDesc(tripsData);
+      setTrips(sortedTrips);
+      setFilteredTrips(sortedTrips);
       setBuses(busesData);
       setRoutes(routesData);
       setDrivers(driversData);
@@ -280,6 +368,8 @@ export default function BusTrip() {
     } catch (error) {
       console.error("Error loading data:", error);
       showSnackbar("Failed to load data", "error");
+      setTrips([]);
+      setFilteredTrips([]);
     } finally {
       setLoading(false);
     }
@@ -288,6 +378,51 @@ export default function BusTrip() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // ================= FILTERING LOGIC =================
+  useEffect(() => {
+    let filtered = trips;
+
+    const matches = (val, filter) => {
+      if (!filter) return true;
+      if (val == null) return false;
+      return String(val).toLowerCase().includes(filter.toLowerCase());
+    };
+
+    // Helper to get display strings for related entities
+    const getBusDisplay = (t) => t.bus?.busNumber || `ID: ${t.busId}`;
+    const getRouteDisplay = (t) => t.route?.routeName || `ID: ${t.routeId}`;
+    const getDriverDisplay = (t) => t.driver?.name || `ID: ${t.driverId}`;
+    const getConductorDisplay = (t) => t.conductor?.name || `ID: ${t.conductorId}`;
+
+    filtered = filtered.filter(t =>
+      matches(t.id, filters.id) &&
+      matches(getBusDisplay(t), filters.bus) &&
+      matches(getRouteDisplay(t), filters.route) &&
+      matches(getDriverDisplay(t), filters.driver) &&
+      matches(getConductorDisplay(t), filters.conductor) &&
+      matches(t.startTime, filters.startTime) &&
+      matches(t.endTime, filters.endTime) &&
+      matches(t.tripStatus, filters.status)
+    );
+
+    // Mobile global search
+    if (isMobile && mobileSearchTerm.trim()) {
+      const term = mobileSearchTerm.toLowerCase().trim();
+      filtered = filtered.filter(t =>
+        matches(t.id, term) ||
+        matches(getBusDisplay(t), term) ||
+        matches(getRouteDisplay(t), term) ||
+        matches(getDriverDisplay(t), term) ||
+        matches(getConductorDisplay(t), term) ||
+        matches(t.startTime, term) ||
+        matches(t.endTime, term) ||
+        matches(t.tripStatus, term)
+      );
+    }
+
+    setFilteredTrips(filtered);
+  }, [trips, filters, mobileSearchTerm, isMobile]);
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
@@ -314,7 +449,9 @@ export default function BusTrip() {
       };
 
       const newTrip = await busTripApi.create(payload);
-      setTrips([...trips, newTrip]);
+      const updatedTrips = sortByIdDesc([...trips, newTrip]);
+      setTrips(updatedTrips);
+      setFilteredTrips(updatedTrips);
       showSnackbar("Trip Added Successfully ✅", "success");
       handleCloseDialog();
     } catch (error) {
@@ -335,7 +472,9 @@ export default function BusTrip() {
     setSubmitting(true);
     try {
       await busTripApi.delete(selectedTrip.id);
-      setTrips(trips.filter(t => t.id !== selectedTrip.id));
+      const updatedTrips = sortByIdDesc(trips.filter(t => t.id !== selectedTrip.id));
+      setTrips(updatedTrips);
+      setFilteredTrips(updatedTrips);
       showSnackbar("Trip deleted successfully!", "success");
       setDeleteDialogOpen(false);
       setSelectedTrip(null);
@@ -373,6 +512,15 @@ export default function BusTrip() {
       tripStatus: "",
     });
     setOpen(true);
+  };
+
+  // Filter change handlers
+  const handleFilterChange = (field) => (e) => {
+    setFilters(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleMobileSearchChange = (e) => {
+    setMobileSearchTerm(e.target.value);
   };
 
   // ================= HELPERS =================
@@ -422,63 +570,89 @@ export default function BusTrip() {
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header Section */}
-          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "stretch", sm: "center" }, gap: { xs: 1.5, sm: 2, md: 3 }, mb: { xs: 2, sm: 2.5, md: 4 } }}>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="h5" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1.1rem", sm: "1.3rem", md: "1.5rem", lg: "1.75rem" }, color: "#1e293b", display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 }, flexWrap: "wrap" }}>
+          {/* Header Section with inline stats and smaller Add button */}
+          <Box sx={{ 
+            display: "flex", 
+            flexDirection: { xs: "column", sm: "row" }, 
+            justifyContent: "space-between", 
+            alignItems: { xs: "stretch", sm: "center" }, 
+            gap: { xs: 1, sm: 2 }, 
+            mb: { xs: 2, sm: 2.5 } 
+          }}>
+            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: { xs: 1, sm: 2 } }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <ScheduleIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
-                <span>Bus Trips</span>
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.875rem" } }}>
-                Manage bus trip schedules
-              </Typography>
+                <Typography variant="h6" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1rem", sm: "1.2rem", md: "1.4rem" }, color: "#1e293b" }}>
+                  Bus Trips
+                </Typography>
+              </Box>
+              {/* Inline stats */}
+              <InlineStats>
+                <span className="stat-chip">Total <span className="num">{trips.length}</span></span>
+                <span className="stat-chip ongoing">Ongoing <span className="num">{trips.filter(t => t.tripStatus === 'ONGOING').length}</span></span>
+                <span className="stat-chip scheduled">Scheduled <span className="num">{trips.filter(t => t.tripStatus === 'SCHEDULED').length}</span></span>
+                <span className="stat-chip completed">Completed <span className="num">{trips.filter(t => t.tripStatus === 'COMPLETED').length}</span></span>
+              </InlineStats>
             </Box>
-            <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 } }} />} onClick={handleOpenDialog}>
+            <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={handleOpenDialog}>
               Add Trip
             </AddButton>
-          </Box>
-
-          {/* Statistics Cards */}
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" }, gap: { xs: 1, sm: 1.5, md: 2 }, mb: { xs: 2, sm: 2.5, md: 3 } }}>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>Total Trips</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" } }}>{trips.length}</Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>Ongoing</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#22c55e" }}>{trips.filter(t => t.tripStatus === 'ONGOING').length}</Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>Scheduled</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#6495ED" }}>{trips.filter(t => t.tripStatus === 'SCHEDULED').length}</Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>Completed</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#d97706" }}>{trips.filter(t => t.tripStatus === 'COMPLETED').length}</Typography>
-            </StatsCard>
           </Box>
 
           {/* Table/List View */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
-                <Table stickyHeader size={isExtraSmall ? "small" : "medium"}>
+                <Table stickyHeader size={isExtraSmall ? "small" : "medium"} sx={{ minWidth: 1200 }}>
                   <GradientHeader>
+                    {/* Header row */}
                     <TableRow>
-                      <TableCell><Typography variant="caption" sx={{ fontWeight: 700 }}>Bus</Typography></TableCell>
-                      <TableCell><Typography variant="caption" sx={{ fontWeight: 700 }}>Route</Typography></TableCell>
-                      <TableCell><Typography variant="caption" sx={{ fontWeight: 700 }}>Driver</Typography></TableCell>
-                      <TableCell><Typography variant="caption" sx={{ fontWeight: 700 }}>Conductor</Typography></TableCell>
-                      <TableCell><Typography variant="caption" sx={{ fontWeight: 700 }}>Start Time</Typography></TableCell>
-                      <TableCell><Typography variant="caption" sx={{ fontWeight: 700 }}>End Time</Typography></TableCell>
-                      <TableCell><Typography variant="caption" sx={{ fontWeight: 700 }}>Status</Typography></TableCell>
-                      <TableCell><Typography variant="caption" sx={{ fontWeight: 700 }}>Actions</Typography></TableCell>
+                      <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
+                      <TableCell sx={{ minWidth: '130px' }}>Bus</TableCell>
+                      <TableCell sx={{ minWidth: '140px' }}>Route</TableCell>
+                      <TableCell sx={{ minWidth: '140px' }}>Driver</TableCell>
+                      <TableCell sx={{ minWidth: '140px' }}>Conductor</TableCell>
+                      <TableCell sx={{ minWidth: '160px' }}>Start Time</TableCell>
+                      <TableCell sx={{ minWidth: '160px' }}>End Time</TableCell>
+                      <TableCell sx={{ minWidth: '100px' }}>Status</TableCell>
+                      <TableCell sx={{ minWidth: '80px' }}>Actions</TableCell>
+                    </TableRow>
+                    {/* Filter row */}
+                    <TableRow>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Bus" value={filters.bus} onChange={handleFilterChange('bus')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Route" value={filters.route} onChange={handleFilterChange('route')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Driver" value={filters.driver} onChange={handleFilterChange('driver')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Conductor" value={filters.conductor} onChange={handleFilterChange('conductor')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Start" value={filters.startTime} onChange={handleFilterChange('startTime')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter End" value={filters.endTime} onChange={handleFilterChange('endTime')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Status" value={filters.status} onChange={handleFilterChange('status')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                      </TableCell>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        {/* Actions filter – empty cell */}
+                      </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
-                    {trips.length > 0 ? (
-                      trips.map((trip) => (
+                    {filteredTrips.length > 0 ? (
+                      filteredTrips.map((trip) => (
                         <StyledTableRow key={trip.id}>
+                          <TableCell>{trip.id}</TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                               <DirectionsBusIcon sx={{ fontSize: { xs: 14, sm: 16, md: 18 }, color: "#6495ED" }} />
@@ -527,14 +701,16 @@ export default function BusTrip() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={8} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
+                        <TableCell colSpan={9} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
                           <Typography variant="body1" color="text.secondary">
                             <ScheduleIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            No trips added yet
+                            {Object.values(filters).some(f => f) ? "No trips match your filters" : "No trips added yet"}
                           </Typography>
-                          <Button variant="outlined" startIcon={<AddIcon />} onClick={handleOpenDialog} sx={{ mt: 2, borderRadius: "10px", textTransform: "none", borderColor: "#6495ED", color: "#6495ED", fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                            Add your first trip
-                          </Button>
+                          {!Object.values(filters).some(f => f) && (
+                            <Button variant="outlined" startIcon={<AddIcon />} onClick={handleOpenDialog} sx={{ mt: 2, borderRadius: "10px", textTransform: "none", borderColor: "#6495ED", color: "#6495ED", fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                              Add your first trip
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     )}
@@ -542,10 +718,26 @@ export default function BusTrip() {
                 </Table>
               </StyledTableContainer>
             ) : (
+              // ----- MOBILE CARD VIEW with global search -----
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
+                <MobileSearchField
+                  fullWidth
+                  placeholder="Search all fields..."
+                  value={mobileSearchTerm}
+                  onChange={handleMobileSearchChange}
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
+                    endAdornment: mobileSearchTerm && (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
                 <Stack spacing={1.5}>
-                  {trips.length > 0 ? (
-                    trips.map((trip, index) => (
+                  {filteredTrips.length > 0 ? (
+                    filteredTrips.map((trip, index) => (
                       <Grow in key={trip.id} timeout={300 * (index + 1) * 0.1}>
                         <MobileCard>
                           <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 }, '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5 } } }}>
@@ -603,8 +795,14 @@ export default function BusTrip() {
                   ) : (
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <ScheduleIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
-                      <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>No trips added yet</Typography>
-                      <Button variant="outlined" startIcon={<AddIcon />} onClick={handleOpenDialog} sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Add first trip</Button>
+                      <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                        {mobileSearchTerm ? `No trips found matching "${mobileSearchTerm}"` : "No trips added yet"}
+                      </Typography>
+                      {!mobileSearchTerm && (
+                        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleOpenDialog} sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          Add first trip
+                        </Button>
+                      )}
                     </Box>
                   )}
                 </Stack>

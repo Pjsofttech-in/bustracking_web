@@ -10,7 +10,7 @@ import {
   Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Close as CloseIcon,
   DirectionsBus as DirectionsBusIcon, Group as GroupIcon,
   CalendarToday as CalendarTodayIcon, Business as BusinessIcon,
-  DriveEta as DriveEtaIcon
+  DriveEta as DriveEtaIcon, Search as SearchIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import busApi from '../../api/busApi';
@@ -44,10 +44,12 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   [theme.breakpoints.down('xs')]: { borderRadius: '10px' },
 }));
 
+// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 280px)",
   minHeight: "400px",
   width: "100%",
+  overflowX: "auto",
   '&::-webkit-scrollbar': { height: '8px', width: '8px' },
   '&::-webkit-scrollbar-track': { backgroundColor: '#f1f5f9', borderRadius: '4px' },
   '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px', '&:hover': { backgroundColor: '#94a3b8' } },
@@ -57,8 +59,7 @@ const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   [theme.breakpoints.down('xs')]: { maxHeight: "calc(100vh - 220px)", minHeight: "200px", '&::-webkit-scrollbar': { width: '4px', height: '4px' } },
   '@media (max-width: 380px)': { maxHeight: "calc(100vh - 200px)", minHeight: "150px" },
   '& .MuiTable-root': {
-    minWidth: '1000px',
-    [theme.breakpoints.down('sm')]: { minWidth: '800px' },
+    minWidth: '1200px', // force horizontal scroll
   },
 }));
 
@@ -106,6 +107,101 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: '16px', [theme.breakpoints.down('sm')]: { paddingRight: '12px' }, [theme.breakpoints.down('xs')]: { paddingRight: '8px' } },
 }));
 
+// ---- Smaller Add Button ----
+const AddBusButton = styled(Button)(({ theme }) => ({
+  borderRadius: '10px',
+  padding: '6px 16px',
+  fontWeight: 600,
+  textTransform: 'none',
+  fontSize: '0.8rem',
+  backgroundColor: '#6495ED',
+  boxShadow: '0 2px 8px rgba(100, 149, 237, 0.25)',
+  transition: 'all 0.3s ease',
+  flexShrink: 0,
+  '&:hover': { backgroundColor: '#4169E1', transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(65, 105, 225, 0.35)' },
+  [theme.breakpoints.down('md')]: { padding: '5px 12px', fontSize: '0.75rem' },
+  [theme.breakpoints.down('sm')]: { width: '100%', padding: '8px 12px', fontSize: '0.8rem', justifyContent: 'center' },
+  [theme.breakpoints.down('xs')]: { padding: '6px 10px', fontSize: '0.7rem', borderRadius: '8px' },
+}));
+
+// ---- Inline Stats (adjustable size) ----
+const InlineStats = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  flexWrap: "wrap",
+  [theme.breakpoints.down('sm')]: { gap: theme.spacing(1) },
+  '& .stat-chip': {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    backgroundColor: "#f1f5f9",
+    borderRadius: "20px",
+    padding: "4px 14px",
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "#1e293b",
+    [theme.breakpoints.down('sm')]: { fontSize: "0.7rem", padding: "2px 10px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.65rem", padding: "2px 8px" },
+    '& .num': {
+      fontWeight: 700,
+      color: "#6495ED",
+      marginLeft: "2px",
+    },
+    '&.active .num': { color: "#16a34a" },
+    '&.breakdown .num': { color: "#dc2626" },
+    '&.terminated .num': { color: "#94a3b8" },
+  }
+}));
+
+// ---- Filter input (white background, tiny) ----
+const FilterInput = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#ffffff',
+    borderRadius: '4px',
+    color: '#1e293b',
+    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
+    '&:hover fieldset': { borderColor: '#6495ED' },
+    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
+    '& input': {
+      padding: '2px 6px',
+      fontSize: '0.6rem',
+      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
+      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
+      '&::placeholder': {
+        color: 'rgba(0,0,0,0.4)',
+        opacity: 1
+      }
+    }
+  },
+  '& .MuiInputAdornment-root': {
+    marginRight: '2px',
+    '& svg': {
+      fontSize: '0.7rem',
+      color: '#94a3b8'
+    }
+  },
+  width: '100%',
+  minWidth: '40px',
+}));
+
+// ---- Mobile search field ----
+const MobileSearchField = styled(TextField)(({ theme }) => ({
+  flex: 1,
+  '& .MuiOutlinedInput-root': {
+    borderRadius: "10px",
+    backgroundColor: "#fff",
+    '&:hover fieldset': { borderColor: "#6495ED" },
+    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
+    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
+    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
+  },
+  '& .MuiInputBase-input': {
+    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
+  },
+}));
+
 const MobileCard = styled(Card)(({ theme }) => ({
   borderRadius: '12px',
   border: '1px solid #f1f5f9',
@@ -127,7 +223,11 @@ const HeaderWrapper = styled(Box)(({ theme }) => ({
 }));
 
 const TitleWrapper = styled(Box)(({ theme }) => ({
-  [theme.breakpoints.down('sm')]: { textAlign: 'center' },
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(2),
+  flexWrap: 'wrap',
+  [theme.breakpoints.down('sm')]: { justifyContent: 'center' },
 }));
 
 const HeaderTitle = styled(Typography)(({ theme }) => ({
@@ -139,7 +239,7 @@ const HeaderTitle = styled(Typography)(({ theme }) => ({
   fontSize: '1.75rem',
   [theme.breakpoints.down('lg')]: { fontSize: '1.5rem' },
   [theme.breakpoints.down('md')]: { fontSize: '1.35rem' },
-  [theme.breakpoints.down('sm')]: { fontSize: '1.2rem', justifyContent: 'center' },
+  [theme.breakpoints.down('sm')]: { fontSize: '1.2rem' },
   [theme.breakpoints.down('xs')]: { fontSize: '1rem' },
 }));
 
@@ -148,22 +248,6 @@ const HeaderSubtitle = styled(Typography)(({ theme }) => ({
   fontSize: '0.875rem',
   [theme.breakpoints.down('sm')]: { fontSize: '0.8rem', textAlign: 'center' },
   [theme.breakpoints.down('xs')]: { fontSize: '0.7rem' },
-}));
-
-const AddBusButton = styled(Button)(({ theme }) => ({
-  borderRadius: '12px',
-  padding: '10px 24px',
-  fontWeight: 600,
-  textTransform: 'none',
-  fontSize: '0.95rem',
-  backgroundColor: '#6495ED',
-  boxShadow: '0 4px 12px rgba(100, 149, 237, 0.3)',
-  transition: 'all 0.3s ease',
-  flexShrink: 0,
-  '&:hover': { backgroundColor: '#4169E1', transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(65, 105, 225, 0.4)' },
-  [theme.breakpoints.down('md')]: { padding: '8px 18px', fontSize: '0.85rem' },
-  [theme.breakpoints.down('sm')]: { width: '100%', padding: '10px 16px', fontSize: '0.85rem', justifyContent: 'center' },
-  [theme.breakpoints.down('xs')]: { padding: '8px 12px', fontSize: '0.8rem', borderRadius: '10px' },
 }));
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -185,6 +269,7 @@ const Bus = () => {
 
   // State
   const [buses, setBuses] = useState([]);
+  const [filteredBuses, setFilteredBuses] = useState([]);
   const [serviceProviders, setServiceProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -197,6 +282,20 @@ const Bus = () => {
     message: '',
     severity: 'success'
   });
+
+  // ---- Per‑column filters (desktop) ----
+  const [filters, setFilters] = useState({
+    id: '',
+    busNumber: '',
+    busModelName: '',
+    busType: '',
+    mfgYear: '',
+    capacity: '',
+    serviceProviderName: '',
+    status: ''
+  });
+  // ---- Mobile global search ----
+  const [mobileSearchTerm, setMobileSearchTerm] = useState('');
 
   const emptyForm = {
     busNumber: '',
@@ -212,6 +311,9 @@ const Bus = () => {
   const busTypeOptions = ['STANDARD', 'MINI', 'LUXURY', 'ELECTRIC', 'HYBRID'];
   const statusOptions = ['ACTIVE', 'BREAKDOWN', 'TERMINATED'];
 
+  // ================= SORTING HELPER (descending ID) =================
+  const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
+
   // ================= LOAD DATA =================
   const loadData = async () => {
     setLoading(true);
@@ -220,12 +322,15 @@ const Bus = () => {
         busApi.getAll(),
         serviceProviderApi.getAll()
       ]);
-      setBuses(Array.isArray(busesData) ? busesData : []);
+      const sorted = sortByIdDesc(Array.isArray(busesData) ? busesData : []);
+      setBuses(sorted);
+      setFilteredBuses(sorted);
       setServiceProviders(Array.isArray(providersData) ? providersData : []);
     } catch (error) {
       console.error('Error loading data:', error);
       showSnackbar('Failed to load data: ' + error.message, 'error');
       setBuses([]);
+      setFilteredBuses([]);
       setServiceProviders([]);
     } finally {
       setLoading(false);
@@ -236,12 +341,60 @@ const Bus = () => {
     loadData();
   }, []);
 
+  // ================= FILTERING LOGIC =================
+  useEffect(() => {
+    let filtered = buses;
+
+    const matches = (val, filter) => {
+      if (!filter) return true;
+      if (val == null) return false;
+      return String(val).toLowerCase().includes(filter.toLowerCase());
+    };
+
+    filtered = filtered.filter(b =>
+      matches(b.id, filters.id) &&
+      matches(b.busNumber, filters.busNumber) &&
+      matches(b.busModelName, filters.busModelName) &&
+      matches(b.busType, filters.busType) &&
+      matches(b.mfgYear, filters.mfgYear) &&
+      matches(b.capacity, filters.capacity) &&
+      matches(b.serviceProviderName, filters.serviceProviderName) &&
+      matches(b.status, filters.status)
+    );
+
+    // Mobile global search
+    if (isMobile && mobileSearchTerm.trim()) {
+      const term = mobileSearchTerm.toLowerCase().trim();
+      filtered = filtered.filter(b =>
+        matches(b.id, term) ||
+        matches(b.busNumber, term) ||
+        matches(b.busModelName, term) ||
+        matches(b.busType, term) ||
+        matches(b.mfgYear, term) ||
+        matches(b.capacity, term) ||
+        matches(b.serviceProviderName, term) ||
+        matches(b.status, term)
+      );
+    }
+
+    setFilteredBuses(filtered);
+  }, [buses, filters, mobileSearchTerm, isMobile]);
+
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // Filter handlers
+  const handleFilterChange = (field) => (e) => {
+    setFilters(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleMobileSearchChange = (e) => {
+    setMobileSearchTerm(e.target.value);
   };
 
   const resetForm = () => {
@@ -294,13 +447,18 @@ const Bus = () => {
         serviceProviderId: serviceProviderId ? Number(serviceProviderId) : null
       };
 
+      let result;
       if (isEdit) {
-        const updated = await busApi.update(selectedId, payload);
-        setBuses(buses.map(b => b.id === selectedId ? updated : b));
+        result = await busApi.update(selectedId, payload);
+        const updated = sortByIdDesc(buses.map(b => b.id === selectedId ? result : b));
+        setBuses(updated);
+        setFilteredBuses(updated);
         showSnackbar('Bus updated successfully!', 'success');
       } else {
-        const newBus = await busApi.create(payload);
-        setBuses([...buses, newBus]);
+        result = await busApi.create(payload);
+        const updated = sortByIdDesc([...buses, result]);
+        setBuses(updated);
+        setFilteredBuses(updated);
         showSnackbar('Bus added successfully!', 'success');
       }
       handleCloseDialog();
@@ -317,7 +475,9 @@ const Bus = () => {
     setSubmitting(true);
     try {
       await busApi.delete(selectedId);
-      setBuses(buses.filter(b => b.id !== selectedId));
+      const updated = sortByIdDesc(buses.filter(b => b.id !== selectedId));
+      setBuses(updated);
+      setFilteredBuses(updated);
       showSnackbar('Bus deleted successfully!', 'success');
       setDeleteDialogOpen(false);
       resetForm();
@@ -369,18 +529,24 @@ const Bus = () => {
   return (
     <PageContainer>
       <ContentWrapper>
-        {/* Header */}
+        {/* Header with inline stats and smaller Add button */}
         <HeaderWrapper>
           <TitleWrapper>
-            <HeaderTitle variant="h5">
-              <DirectionsBusIcon sx={{ color: '#6495ED', fontSize: { xs: 24, sm: 28 } }} />
-              Buses
-            </HeaderTitle>
-            <HeaderSubtitle variant="body2">
-              Manage buses with assigned service providers
-            </HeaderSubtitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <HeaderTitle variant="h5">
+                <DirectionsBusIcon sx={{ color: '#6495ED', fontSize: { xs: 24, sm: 28 } }} />
+                Buses
+              </HeaderTitle>
+            </Box>
+            {/* Inline stats */}
+            <InlineStats>
+              <span className="stat-chip">Total <span className="num">{buses.length}</span></span>
+              <span className="stat-chip active">Active <span className="num">{buses.filter(b => b.status === 'ACTIVE').length}</span></span>
+              <span className="stat-chip breakdown">Breakdown <span className="num">{buses.filter(b => b.status === 'BREAKDOWN').length}</span></span>
+              <span className="stat-chip terminated">Terminated <span className="num">{buses.filter(b => b.status === 'TERMINATED').length}</span></span>
+            </InlineStats>
           </TitleWrapper>
-          <AddBusButton variant="contained" startIcon={<AddIcon />} onClick={handleAddOpen}>
+          <AddBusButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={handleAddOpen}>
             Add Bus
           </AddBusButton>
         </HeaderWrapper>
@@ -392,21 +558,54 @@ const Bus = () => {
               <Table stickyHeader>
                 <GradientHeader>
                   <TableRow>
-                    <TableCell align="center">ID</TableCell>
-                    <TableCell>Bus Number</TableCell>
-                    <TableCell>Bus Model</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell align="center">MFG Year</TableCell>
-                    <TableCell align="center">Capacity</TableCell>
-                    <TableCell>Provider</TableCell>
-                    <TableCell>Created</TableCell>
-                    <TableCell align="center">Status</TableCell>
-                    <TableCell align="center">Actions</TableCell>
+                    <TableCell sx={{ minWidth: '60px' }} align="center">ID</TableCell>
+                    <TableCell sx={{ minWidth: '120px' }}>Bus Number</TableCell>
+                    <TableCell sx={{ minWidth: '140px' }}>Bus Model</TableCell>
+                    <TableCell sx={{ minWidth: '110px' }}>Type</TableCell>
+                    <TableCell sx={{ minWidth: '90px' }} align="center">MFG Year</TableCell>
+                    <TableCell sx={{ minWidth: '90px' }} align="center">Capacity</TableCell>
+                    <TableCell sx={{ minWidth: '150px' }}>Provider</TableCell>
+                    <TableCell sx={{ minWidth: '120px' }}>Created</TableCell>
+                    <TableCell sx={{ minWidth: '100px' }} align="center">Status</TableCell>
+                    <TableCell sx={{ minWidth: '100px' }} align="center">Actions</TableCell>
+                  </TableRow>
+                  {/* Filter row */}
+                  <TableRow>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                    </TableCell>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <FilterInput size="small" placeholder="Filter Number" value={filters.busNumber} onChange={handleFilterChange('busNumber')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                    </TableCell>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <FilterInput size="small" placeholder="Filter Model" value={filters.busModelName} onChange={handleFilterChange('busModelName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                    </TableCell>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <FilterInput size="small" placeholder="Filter Type" value={filters.busType} onChange={handleFilterChange('busType')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                    </TableCell>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <FilterInput size="small" placeholder="Filter Year" value={filters.mfgYear} onChange={handleFilterChange('mfgYear')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                    </TableCell>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <FilterInput size="small" placeholder="Filter Cap" value={filters.capacity} onChange={handleFilterChange('capacity')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                    </TableCell>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <FilterInput size="small" placeholder="Filter Provider" value={filters.serviceProviderName} onChange={handleFilterChange('serviceProviderName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                    </TableCell>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <FilterInput size="small" placeholder="Filter Created" value={filters.createdAt} onChange={handleFilterChange('createdAt')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                    </TableCell>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <FilterInput size="small" placeholder="Filter Status" value={filters.status} onChange={handleFilterChange('status')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
+                    </TableCell>
+                    <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      {/* Actions filter – empty */} 
+                    </TableCell>
                   </TableRow>
                 </GradientHeader>
                 <TableBody>
-                  {buses.length > 0 ? (
-                    buses.map((b) => (
+                  {filteredBuses.length > 0 ? (
+                    filteredBuses.map((b) => (
                       <StyledTableRow key={b.id}>
                         <TableCell align="center" sx={{ fontWeight: 600 }}>{b.id}</TableCell>
                         <TableCell>
@@ -461,10 +660,14 @@ const Bus = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
-                        <Typography color="text.secondary">No buses added yet</Typography>
-                        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
-                          Add your first bus
-                        </Button>
+                        <Typography color="text.secondary">
+                          {Object.values(filters).some(f => f) ? "No buses match your filters" : "No buses added yet"}
+                        </Typography>
+                        {!Object.values(filters).some(f => f) && (
+                          <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
+                            Add your first bus
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   )}
@@ -472,11 +675,26 @@ const Bus = () => {
               </Table>
             </StyledTableContainer>
           ) : (
-            // Mobile/Tablet Card View
+            // Mobile/Tablet Card View with global search
             <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
+              <MobileSearchField
+                fullWidth
+                placeholder="Search all fields..."
+                value={mobileSearchTerm}
+                onChange={handleMobileSearchChange}
+                sx={{ mb: 2 }}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
+                  endAdornment: mobileSearchTerm && (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
               <Stack spacing={1.5}>
-                {buses.length > 0 ? (
-                  buses.map((b, index) => (
+                {filteredBuses.length > 0 ? (
+                  filteredBuses.map((b, index) => (
                     <Grow in key={b.id} timeout={300 * (index + 1) * 0.1}>
                       <MobileCard>
                         <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
@@ -538,8 +756,12 @@ const Bus = () => {
                 ) : (
                   <Box sx={{ textAlign: 'center', py: 4 }}>
                     <DirectionsBusIcon sx={{ fontSize: 48, opacity: 0.2, mb: 2 }} />
-                    <Typography color="text.secondary">No buses added yet</Typography>
-                    <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>Add first bus</Button>
+                    <Typography color="text.secondary">
+                      {mobileSearchTerm ? `No buses found matching "${mobileSearchTerm}"` : "No buses added yet"}
+                    </Typography>
+                    {!mobileSearchTerm && (
+                      <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>Add first bus</Button>
+                    )}
                   </Box>
                 )}
               </Stack>

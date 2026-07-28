@@ -36,9 +36,9 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import ClassIcon from "@mui/icons-material/Class";
 import SchoolIcon from "@mui/icons-material/School";
+import SearchIcon from "@mui/icons-material/Search";
 import { styled } from "@mui/material/styles";
 
-// ✅ Import classApi
 import classApi from "../../api/classApi";
 
 // ================= STYLED COMPONENTS =================
@@ -56,33 +56,19 @@ const MainContent = styled(Box)(({ theme }) => ({
   width: "100%",
   maxWidth: "100%",
   overflowX: "hidden",
-  [theme.breakpoints.down('lg')]: {
-    padding: theme.spacing(2.5),
-  },
-  [theme.breakpoints.down('md')]: {
-    padding: theme.spacing(2),
-  },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1.5),
-  },
-  [theme.breakpoints.down('xs')]: {
-    padding: theme.spacing(1),
-  },
-  '@media (max-width: 380px)': {
-    padding: theme.spacing(0.75),
-  }
+  [theme.breakpoints.down('lg')]: { padding: theme.spacing(2.5) },
+  [theme.breakpoints.down('md')]: { padding: theme.spacing(2) },
+  [theme.breakpoints.down('sm')]: { padding: theme.spacing(1.5) },
+  [theme.breakpoints.down('xs')]: { padding: theme.spacing(1) },
+  '@media (max-width: 380px)': { padding: theme.spacing(0.75) }
 }));
 
 const ContentWrapper = styled(Box)(({ theme }) => ({
   maxWidth: "1200px",
   margin: "0 auto",
   width: "100%",
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(0, 0.5),
-  },
-  [theme.breakpoints.down('xs')]: {
-    padding: 0,
-  }
+  [theme.breakpoints.down('sm')]: { padding: theme.spacing(0, 0.5) },
+  [theme.breakpoints.down('xs')]: { padding: 0 }
 }));
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -91,58 +77,25 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   overflow: "hidden",
   transition: "all 0.3s ease",
   width: "100%",
-  [theme.breakpoints.down('sm')]: {
-    borderRadius: "12px",
-  },
-  [theme.breakpoints.down('xs')]: {
-    borderRadius: "8px",
-  },
-  '@media (max-width: 380px)': {
-    borderRadius: "6px",
-    margin: "0 -2px",
-  }
+  [theme.breakpoints.down('sm')]: { borderRadius: "12px" },
+  [theme.breakpoints.down('xs')]: { borderRadius: "8px" },
+  '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
+// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 400px)",
   minHeight: "300px",
   width: "100%",
-  '&::-webkit-scrollbar': {
-    width: '6px',
-    height: '6px',
-  },
-  '&::-webkit-scrollbar-track': {
-    backgroundColor: '#f1f5f9',
-    borderRadius: '4px',
-  },
-  '&::-webkit-scrollbar-thumb': {
-    backgroundColor: '#cbd5e1',
-    borderRadius: '4px',
-    '&:hover': {
-      backgroundColor: '#94a3b8',
-    },
-  },
+  overflowX: "auto",
+  '&::-webkit-scrollbar': { width: '6px', height: '6px' },
+  '&::-webkit-scrollbar-track': { backgroundColor: '#f1f5f9', borderRadius: '4px' },
+  '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px', '&:hover': { backgroundColor: '#94a3b8' } },
   scrollBehavior: "smooth",
-  [theme.breakpoints.down('md')]: {
-    maxHeight: "calc(100vh - 380px)",
-    minHeight: "250px",
-  },
-  [theme.breakpoints.down('sm')]: {
-    maxHeight: "calc(100vh - 350px)",
-    minHeight: "200px",
-  },
-  [theme.breakpoints.down('xs')]: {
-    maxHeight: "calc(100vh - 320px)",
-    minHeight: "150px",
-    '&::-webkit-scrollbar': {
-      width: '4px',
-      height: '4px',
-    },
-  },
-  '@media (max-width: 380px)': {
-    maxHeight: "calc(100vh - 300px)",
-    minHeight: "120px",
-  }
+  [theme.breakpoints.down('md')]: { maxHeight: "calc(100vh - 380px)", minHeight: "250px" },
+  [theme.breakpoints.down('sm')]: { maxHeight: "calc(100vh - 350px)", minHeight: "200px" },
+  [theme.breakpoints.down('xs')]: { maxHeight: "calc(100vh - 320px)", minHeight: "150px", '&::-webkit-scrollbar': { width: '4px', height: '4px' } },
+  '@media (max-width: 380px)': { maxHeight: "calc(100vh - 300px)", minHeight: "120px" }
 }));
 
 const GradientHeader = styled(TableHead)(({ theme }) => ({
@@ -161,167 +114,126 @@ const GradientHeader = styled(TableHead)(({ theme }) => ({
     position: "sticky",
     top: 0,
     backgroundColor: "inherit",
-    [theme.breakpoints.down('lg')]: {
-      fontSize: "0.65rem",
-      padding: "8px 6px",
-    },
-    [theme.breakpoints.down('md')]: {
-      fontSize: "0.6rem",
-      padding: "6px 5px",
-    },
-    [theme.breakpoints.down('sm')]: {
-      fontSize: "0.55rem",
-      padding: "5px 4px",
-      letterSpacing: "0.2px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      fontSize: "0.5rem",
-      padding: "4px 3px",
-      letterSpacing: "0.1px",
-    },
-    '@media (max-width: 380px)': {
-      fontSize: "0.45rem",
-      padding: "3px 2px",
-    }
+    [theme.breakpoints.down('lg')]: { fontSize: "0.65rem", padding: "8px 6px" },
+    [theme.breakpoints.down('md')]: { fontSize: "0.6rem", padding: "6px 5px" },
+    [theme.breakpoints.down('sm')]: { fontSize: "0.55rem", padding: "5px 4px", letterSpacing: "0.2px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.5rem", padding: "4px 3px", letterSpacing: "0.1px" },
+    '@media (max-width: 380px)': { fontSize: "0.45rem", padding: "3px 2px" }
   },
-  '& th:first-of-type': {
-    paddingLeft: "12px",
-    [theme.breakpoints.down('sm')]: {
-      paddingLeft: "8px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      paddingLeft: "6px",
-    },
-  },
-  '& th:last-of-type': {
-    paddingRight: "12px",
-    [theme.breakpoints.down('sm')]: {
-      paddingRight: "8px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      paddingRight: "6px",
-    },
-  }
+  '& th:first-of-type': { paddingLeft: "12px", [theme.breakpoints.down('sm')]: { paddingLeft: "8px" }, [theme.breakpoints.down('xs')]: { paddingLeft: "6px" } },
+  '& th:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   transition: "background-color 0.2s ease",
-  '&:hover': {
-    backgroundColor: "#f8fafc",
-  },
-  '&:nth-of-type(even)': {
-    backgroundColor: "#fafbfc",
-  },
-  '&:nth-of-type(even):hover': {
-    backgroundColor: "#f1f5f9",
-  },
+  '&:hover': { backgroundColor: "#f8fafc" },
+  '&:nth-of-type(even)': { backgroundColor: "#fafbfc" },
+  '&:nth-of-type(even):hover': { backgroundColor: "#f1f5f9" },
   '& td': {
     padding: "8px 8px",
     fontSize: "0.75rem",
     borderBottom: "1px solid #f1f5f9",
-    [theme.breakpoints.down('lg')]: {
-      padding: "7px 6px",
-      fontSize: "0.7rem",
-    },
-    [theme.breakpoints.down('md')]: {
-      padding: "6px 5px",
-      fontSize: "0.65rem",
-    },
-    [theme.breakpoints.down('sm')]: {
-      padding: "5px 4px",
-      fontSize: "0.6rem",
-    },
-    [theme.breakpoints.down('xs')]: {
-      padding: "4px 3px",
-      fontSize: "0.55rem",
-    },
-    '@media (max-width: 380px)': {
-      padding: "3px 2px",
-      fontSize: "0.5rem",
-    }
+    [theme.breakpoints.down('lg')]: { padding: "7px 6px", fontSize: "0.7rem" },
+    [theme.breakpoints.down('md')]: { padding: "6px 5px", fontSize: "0.65rem" },
+    [theme.breakpoints.down('sm')]: { padding: "5px 4px", fontSize: "0.6rem" },
+    [theme.breakpoints.down('xs')]: { padding: "4px 3px", fontSize: "0.55rem" },
+    '@media (max-width: 380px)': { padding: "3px 2px", fontSize: "0.5rem" }
   },
-  '& td:first-of-type': {
-    paddingLeft: "12px",
-    [theme.breakpoints.down('sm')]: {
-      paddingLeft: "8px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      paddingLeft: "6px",
-    },
-  },
-  '& td:last-of-type': {
-    paddingRight: "12px",
-    [theme.breakpoints.down('sm')]: {
-      paddingRight: "8px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      paddingRight: "6px",
-    },
-  }
+  '& td:first-of-type': { paddingLeft: "12px", [theme.breakpoints.down('sm')]: { paddingLeft: "8px" }, [theme.breakpoints.down('xs')]: { paddingLeft: "6px" } },
+  '& td:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
+// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
-  borderRadius: "12px",
-  padding: "10px 24px",
+  borderRadius: "10px",
+  padding: "6px 16px",
   fontWeight: 600,
   textTransform: "none",
-  fontSize: "0.95rem",
+  fontSize: "0.8rem",
   backgroundColor: "#6495ED",
-  boxShadow: "0 4px 12px rgba(100, 149, 237, 0.3)",
+  boxShadow: "0 2px 8px rgba(100, 149, 237, 0.25)",
   transition: "all 0.3s ease",
   flexShrink: 0,
-  '&:hover': {
-    backgroundColor: "#4169E1",
-    transform: "translateY(-2px)",
-    boxShadow: "0 6px 20px rgba(65, 105, 225, 0.4)",
-  },
-  [theme.breakpoints.down('md')]: {
-    padding: "8px 18px",
-    fontSize: "0.85rem",
-  },
-  [theme.breakpoints.down('sm')]: {
-    width: "100%",
-    padding: "10px 16px",
-    fontSize: "0.85rem",
-    justifyContent: "center",
-  },
-  [theme.breakpoints.down('xs')]: {
-    padding: "8px 12px",
+  '&:hover': { backgroundColor: "#4169E1", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(65, 105, 225, 0.35)" },
+  [theme.breakpoints.down('md')]: { padding: "5px 12px", fontSize: "0.75rem" },
+  [theme.breakpoints.down('sm')]: { width: "100%", padding: "8px 12px", fontSize: "0.8rem", justifyContent: "center" },
+  [theme.breakpoints.down('xs')]: { padding: "6px 10px", fontSize: "0.7rem", borderRadius: "8px" },
+  '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
+}));
+
+// ---- Inline Stats (adjustable size) ----
+const InlineStats = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  flexWrap: "wrap",
+  [theme.breakpoints.down('sm')]: { gap: theme.spacing(1) },
+  '& .stat-chip': {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    backgroundColor: "#f1f5f9",
+    borderRadius: "20px",
+    padding: "4px 14px",
     fontSize: "0.8rem",
-    borderRadius: "10px",
-  },
-  '@media (max-width: 380px)': {
-    padding: "6px 10px",
-    fontSize: "0.75rem",
-    borderRadius: "8px",
+    fontWeight: 500,
+    color: "#1e293b",
+    [theme.breakpoints.down('sm')]: { fontSize: "0.7rem", padding: "2px 10px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.65rem", padding: "2px 8px" },
+    '& .num': {
+      fontWeight: 700,
+      color: "#6495ED",
+      marginLeft: "2px",
+    }
   }
 }));
 
-const StatsCard = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  borderRadius: "12px",
-  border: "1px solid #f1f5f9",
-  boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-  transition: "all 0.2s ease",
-  '&:hover': {
-    borderColor: "#6495ED",
-    boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)",
+// ---- Filter input (white background, tiny) ----
+const FilterInput = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#ffffff',
+    borderRadius: '4px',
+    color: '#1e293b',
+    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
+    '&:hover fieldset': { borderColor: '#6495ED' },
+    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
+    '& input': {
+      padding: '2px 6px',
+      fontSize: '0.6rem',
+      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
+      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
+      '&::placeholder': {
+        color: 'rgba(0,0,0,0.4)',
+        opacity: 1
+      }
+    }
   },
-  [theme.breakpoints.down('md')]: {
-    padding: theme.spacing(1.5),
+  '& .MuiInputAdornment-root': {
+    marginRight: '2px',
+    '& svg': {
+      fontSize: '0.7rem',
+      color: '#94a3b8'
+    }
   },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1.2),
+  width: '100%',
+  minWidth: '40px',
+}));
+
+// ---- Mobile search field ----
+const MobileSearchField = styled(TextField)(({ theme }) => ({
+  flex: 1,
+  '& .MuiOutlinedInput-root': {
     borderRadius: "10px",
+    backgroundColor: "#fff",
+    '&:hover fieldset': { borderColor: "#6495ED" },
+    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
+    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
+    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
   },
-  [theme.breakpoints.down('xs')]: {
-    padding: theme.spacing(1),
-    borderRadius: "8px",
+  '& .MuiInputBase-input': {
+    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
   },
-  '@media (max-width: 380px)': {
-    padding: theme.spacing(0.75),
-    borderRadius: "6px",
-  }
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -330,94 +242,44 @@ const MobileCard = styled(Card)(({ theme }) => ({
   boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
   transition: "all 0.2s ease",
   width: "100%",
-  '&:hover': {
-    borderColor: "#6495ED",
-    boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)",
-  },
-  [theme.breakpoints.down('xs')]: {
-    borderRadius: "10px",
-  },
-  '@media (max-width: 380px)': {
-    borderRadius: "8px",
-  }
+  '&:hover': { borderColor: "#6495ED", boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)" },
+  [theme.breakpoints.down('xs')]: { borderRadius: "10px" },
+  '@media (max-width: 380px)': { borderRadius: "8px" }
 }));
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
     borderRadius: "20px",
     padding: theme.spacing(1),
-    [theme.breakpoints.down('md')]: {
-      margin: "24px",
-      padding: theme.spacing(0.75),
-    },
-    [theme.breakpoints.down('sm')]: {
-      margin: "16px",
-      width: "100%",
-      borderRadius: "16px",
-      maxHeight: "95vh",
-      padding: theme.spacing(0.5),
-    },
-    [theme.breakpoints.down('xs')]: {
-      margin: "10px",
-      borderRadius: "14px",
-      maxHeight: "92vh",
-    },
-    '@media (max-width: 380px)': {
-      margin: "6px",
-      borderRadius: "12px",
-      maxHeight: "90vh",
-      padding: theme.spacing(0.25),
-    }
+    [theme.breakpoints.down('md')]: { margin: "24px", padding: theme.spacing(0.75) },
+    [theme.breakpoints.down('sm')]: { margin: "16px", width: "100%", borderRadius: "16px", maxHeight: "95vh", padding: theme.spacing(0.5) },
+    [theme.breakpoints.down('xs')]: { margin: "10px", borderRadius: "14px", maxHeight: "92vh" },
+    '@media (max-width: 380px)': { margin: "6px", borderRadius: "12px", maxHeight: "90vh", padding: theme.spacing(0.25) }
   }
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiOutlinedInput-root': {
     borderRadius: "10px",
-    '&:hover fieldset': {
-      borderColor: "#6495ED",
-    },
-    '&.Mui-focused fieldset': {
-      borderColor: "#6495ED",
-      borderWidth: "2px",
-    },
-    [theme.breakpoints.down('sm')]: {
-      borderRadius: "8px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      borderRadius: "6px",
-    }
+    '&:hover fieldset': { borderColor: "#6495ED" },
+    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
+    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
+    [theme.breakpoints.down('xs')]: { borderRadius: "6px" }
   },
-  '& .MuiInputLabel-root': {
-    [theme.breakpoints.down('sm')]: {
-      fontSize: "0.85rem",
-    },
-    [theme.breakpoints.down('xs')]: {
-      fontSize: "0.75rem",
-    }
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: {
-      fontSize: "0.85rem",
-      padding: "10px 12px",
-    },
-    [theme.breakpoints.down('xs')]: {
-      fontSize: "0.75rem",
-      padding: "8px 10px",
-    }
-  }
+  '& .MuiInputLabel-root': { [theme.breakpoints.down('sm')]: { fontSize: "0.85rem" }, [theme.breakpoints.down('xs')]: { fontSize: "0.75rem" } },
+  '& .MuiInputBase-input': { [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" }, [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" } }
 }));
 
 // ================= MAIN COMPONENT =================
 export default function Class() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isExtraSmall = useMediaQuery('(max-width: 380px)');
 
   const [open, setOpen] = useState(false);
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [form, setForm] = useState({ name: "" });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -429,15 +291,30 @@ export default function Class() {
     severity: "success"
   });
 
+  // ---- Per‑column filters (desktop) ----
+  const [filters, setFilters] = useState({
+    id: "",
+    name: "",
+  });
+  // ---- Mobile global search ----
+  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
+
+  // ================= SORTING HELPER (descending ID) =================
+  const sortByIdDesc = (arr) => [...arr].sort((a, b) => b.id - a.id);
+
   // ================= LOAD DATA =================
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await classApi.getAll();
-      setData(data);
+      const response = await classApi.getAll();
+      const sorted = sortByIdDesc(Array.isArray(response) ? response : []);
+      setData(sorted);
+      setFilteredData(sorted);
     } catch (error) {
       console.error("Error fetching data", error);
       showSnackbar("Failed to load classes", "error");
+      setData([]);
+      setFilteredData([]);
     } finally {
       setLoading(false);
     }
@@ -447,17 +324,49 @@ export default function Class() {
     loadData();
   }, []);
 
+  // ================= FILTERING LOGIC =================
+  useEffect(() => {
+    let filtered = data;
+
+    const matches = (val, filter) => {
+      if (!filter) return true;
+      if (val == null) return false;
+      return String(val).toLowerCase().includes(filter.toLowerCase());
+    };
+
+    filtered = filtered.filter((item) =>
+      matches(item.id, filters.id) &&
+      matches(item.name, filters.name)
+    );
+
+    // Mobile global search
+    if (isMobile && mobileSearchTerm.trim()) {
+      const term = mobileSearchTerm.toLowerCase().trim();
+      filtered = filtered.filter((item) =>
+        matches(item.id, term) ||
+        matches(item.name, term)
+      );
+    }
+
+    setFilteredData(filtered);
+  }, [data, filters, mobileSearchTerm, isMobile]);
+
   const showSnackbar = (message, severity = "success") => {
-    setSnackbar({
-      open: true,
-      message,
-      severity
-    });
+    setSnackbar({ open: true, message, severity });
   };
 
   // ================= HANDLE CHANGE =================
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // ================= FILTER HANDLERS =================
+  const handleFilterChange = (field) => (e) => {
+    setFilters((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleMobileSearchChange = (e) => {
+    setMobileSearchTerm(e.target.value);
   };
 
   // ================= HANDLE SUBMIT =================
@@ -469,11 +378,11 @@ export default function Class() {
 
     setSubmitting(true);
     try {
-      const classData = {
-        name: form.name.trim()
-      };
+      const classData = { name: form.name.trim() };
       const newClass = await classApi.create(classData);
-      setData([...data, newClass]);
+      const updated = sortByIdDesc([...data, newClass]);
+      setData(updated);
+      setFilteredData(updated);
       showSnackbar("Class added successfully!", "success");
       setForm({ name: "" });
       setOpen(false);
@@ -495,7 +404,9 @@ export default function Class() {
     setSubmitting(true);
     try {
       await classApi.delete(selectedClass.id);
-      setData(data.filter(item => item.id !== selectedClass.id));
+      const updated = sortByIdDesc(data.filter((item) => item.id !== selectedClass.id));
+      setData(updated);
+      setFilteredData(updated);
       showSnackbar("Class deleted successfully!", "success");
       setDeleteDialogOpen(false);
       setSelectedClass(null);
@@ -512,14 +423,7 @@ export default function Class() {
     return (
       <PageContainer>
         <MainContent>
-          <Box sx={{ 
-            display: "flex", 
-            justifyContent: "center", 
-            alignItems: "center", 
-            height: "60vh",
-            flexDirection: "column",
-            gap: 2
-          }}>
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh", flexDirection: "column", gap: 2 }}>
             <CircularProgress size={isExtraSmall ? 30 : 40} sx={{ color: "#6495ED" }} />
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: isExtraSmall ? '0.75rem' : '0.875rem' }}>
               Loading classes...
@@ -534,129 +438,64 @@ export default function Class() {
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header Section */}
+          {/* Header with inline stats and smaller Add button */}
           <Box sx={{ 
             display: "flex", 
-            flexDirection: { xs: "column", sm: "row" },
-            justifyContent: "space-between",
-            alignItems: { xs: "stretch", sm: "center" },
-            gap: { xs: 1.5, sm: 2, md: 3 },
-            mb: { xs: 2, sm: 2.5, md: 4 }
+            flexDirection: { xs: "column", sm: "row" }, 
+            justifyContent: "space-between", 
+            alignItems: { xs: "stretch", sm: "center" }, 
+            gap: { xs: 1, sm: 2 }, 
+            mb: { xs: 2, sm: 2 } 
           }}>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography 
-                variant="h5" 
-                component="h1"
-                sx={{ 
-                  fontWeight: 700,
-                  fontSize: { xs: "1.1rem", sm: "1.3rem", md: "1.5rem", lg: "1.75rem" },
-                  color: "#1e293b",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: { xs: 1, sm: 1.5 },
-                  flexWrap: "wrap",
-                }}
-              >
+            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: { xs: 1, sm: 2 } }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <ClassIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
-                <span>Classes</span>
-              </Typography>
-              <Typography 
-                variant="body2" 
-                color="text.secondary"
-                sx={{ 
-                  mt: 0.25,
-                  fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.875rem" }
-                }}
-              >
-                Manage school classes and sections
-              </Typography>
+                <Typography variant="h6" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1rem", sm: "1.2rem", md: "1.4rem" }, color: "#1e293b" }}>
+                  Classes
+                </Typography>
+              </Box>
+              {/* Inline stats */}
+              <InlineStats>
+                <span className="stat-chip">Total <span className="num">{data.length}</span></span>
+              </InlineStats>
             </Box>
-
-            <AddButton
-              variant="contained"
-              startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 } }} />}
-              onClick={() => setOpen(true)}
-            >
+            <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={() => setOpen(true)}>
               Add Class
             </AddButton>
-          </Box>
-
-          {/* Statistics Cards */}
-          <Box sx={{ 
-            display: "grid",
-            gridTemplateColumns: { 
-              xs: "1fr 1fr", 
-              sm: "repeat(4, 1fr)" 
-            },
-            gap: { xs: 1, sm: 1.5, md: 2 },
-            mb: { xs: 2, sm: 2.5, md: 3 }
-          }}>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Total Classes
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" } }}>
-                {data.length}
-              </Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Active Classes
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#22c55e" }}>
-                {data.length}
-              </Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Total Students
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#6495ED" }}>
-                {data.length * 30}
-              </Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Last Updated
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.7rem", sm: "0.8rem", md: "1rem" }, color: "#64748b" }}>
-                {data.length > 0 ? "Today" : "No Data"}
-              </Typography>
-            </StatsCard>
           </Box>
 
           {/* Table/List View */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
-                <Table stickyHeader size={isExtraSmall ? "small" : "medium"}>
+                <Table stickyHeader sx={{ minWidth: 600 }}>
                   <GradientHeader>
+                    {/* Header row */}
                     <TableRow>
-                      <TableCell sx={{ minWidth: { xs: "30px", sm: "40px", md: "80px" } }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          ID
-                        </Typography>
+                      <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
+                      <TableCell sx={{ minWidth: '200px' }}>Class Name</TableCell>
+                      <TableCell sx={{ minWidth: '100px' }} align="center">Status</TableCell>
+                      <TableCell sx={{ minWidth: '100px' }} align="center">Actions</TableCell>
+                    </TableRow>
+                    {/* Filter row */}
+                    <TableRow>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter ID" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
                       </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Class Name
-                        </Typography>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <FilterInput size="small" placeholder="Filter Name" value={filters.name} onChange={handleFilterChange('name')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "80px", sm: "100px", md: "150px" } }} align="center">
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Status
-                        </Typography>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        {/* Status filter – no filter needed */}
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "60px", sm: "80px", md: "100px" } }} align="center">
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Actions
-                        </Typography>
+                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        {/* Actions – empty */}
                       </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
-                    {data.length > 0 ? (
-                      data.map((row) => (
+                    {filteredData.length > 0 ? (
+                      filteredData.map((row) => (
                         <StyledTableRow key={row.id}>
                           <TableCell sx={{ fontWeight: 600 }}>{row.id}</TableCell>
                           <TableCell>
@@ -684,11 +523,13 @@ export default function Class() {
                         <TableCell colSpan={4} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
                           <Typography variant="body1" color="text.secondary">
                             <ClassIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            No classes added yet
+                            {Object.values(filters).some(f => f) ? "No classes match your filters" : "No classes added yet"}
                           </Typography>
-                          <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpen(true)} sx={{ mt: 2, borderRadius: "10px", textTransform: "none", borderColor: "#6495ED", color: "#6495ED", fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                            Add your first class
-                          </Button>
+                          {!Object.values(filters).some(f => f) && (
+                            <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpen(true)} sx={{ mt: 2, borderRadius: "10px", textTransform: "none", borderColor: "#6495ED", color: "#6495ED", fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                              Add your first class
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     )}
@@ -696,11 +537,26 @@ export default function Class() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile/Tablet Card View
+              // Mobile/Tablet Card View with global search
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
+                <MobileSearchField
+                  fullWidth
+                  placeholder="Search all fields..."
+                  value={mobileSearchTerm}
+                  onChange={handleMobileSearchChange}
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
+                    endAdornment: mobileSearchTerm && (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
                 <Stack spacing={1.5}>
-                  {data.length > 0 ? (
-                    data.map((row, index) => (
+                  {filteredData.length > 0 ? (
+                    filteredData.map((row, index) => (
                       <Grow in key={row.id} timeout={300 * (index + 1) * 0.1}>
                         <MobileCard>
                           <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 }, '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5 } } }}>
@@ -728,7 +584,7 @@ export default function Class() {
                               </Box>
                               <Box>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>Students</Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.85rem" } }}>30</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.85rem" } }}>--</Typography>
                               </Box>
                             </Box>
                           </CardContent>
@@ -738,8 +594,14 @@ export default function Class() {
                   ) : (
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <ClassIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
-                      <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>No classes added yet</Typography>
-                      <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpen(true)} sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Add first class</Button>
+                      <Typography variant="body1" color="text.secondary">
+                        {mobileSearchTerm ? `No classes found matching "${mobileSearchTerm}"` : "No classes added yet"}
+                      </Typography>
+                      {!mobileSearchTerm && (
+                        <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpen(true)} sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          Add first class
+                        </Button>
+                      )}
                     </Box>
                   )}
                 </Stack>
@@ -778,8 +640,8 @@ export default function Class() {
           />
         </DialogContent>
         <DialogActions sx={{ p: { xs: 1.5, sm: 2, md: 2.5 }, pt: { xs: 0.5, sm: 0.75, md: 1 }, gap: 0.5, flexWrap: 'wrap', flexDirection: { xs: 'column', sm: 'row' } }}>
-          <Button onClick={() => setOpen(false)} disabled={submitting} fullWidth={isExtraSmall} sx={{ textTransform: "none", borderRadius: "10px", color: "#64748b", fontSize: { xs: '0.8rem', sm: '0.875rem' }, '&:hover': { backgroundColor: "#f1f5f9" }, flex: { xs: 1, sm: 0 }, order: { xs: 2, sm: 1 } }}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit} disabled={submitting} fullWidth={isExtraSmall} sx={{ textTransform: "none", borderRadius: "10px", backgroundColor: "#6495ED", fontWeight: 600, px: { xs: 2, sm: 3 }, fontSize: { xs: '0.8rem', sm: '0.875rem' }, flex: { xs: 1, sm: 0 }, order: { xs: 1, sm: 2 }, '&:hover': { backgroundColor: "#4169E1" } }}>
+          <Button onClick={() => setOpen(false)} disabled={submitting} sx={{ textTransform: "none", borderRadius: "10px", color: "#64748b", fontSize: { xs: '0.8rem', sm: '0.875rem' }, '&:hover': { backgroundColor: "#f1f5f9" }, flex: { xs: 1, sm: 0 }, order: { xs: 2, sm: 1 } }}>Cancel</Button>
+          <Button variant="contained" onClick={handleSubmit} disabled={submitting} sx={{ textTransform: "none", borderRadius: "10px", backgroundColor: "#6495ED", fontWeight: 600, px: { xs: 2, sm: 3 }, fontSize: { xs: '0.8rem', sm: '0.875rem' }, flex: { xs: 1, sm: 0 }, order: { xs: 1, sm: 2 }, '&:hover': { backgroundColor: "#4169E1" } }}>
             {submitting ? <CircularProgress size={isExtraSmall ? 20 : 24} color="inherit" /> : "Save Class"}
           </Button>
         </DialogActions>
@@ -794,8 +656,8 @@ export default function Class() {
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: { xs: 1.5, sm: 2, md: 2.5 }, gap: 0.5, flexDirection: { xs: 'column', sm: 'row' } }}>
-          <Button onClick={() => setDeleteDialogOpen(false)} disabled={submitting} fullWidth={isExtraSmall} sx={{ textTransform: "none", borderRadius: "10px", color: "#64748b", fontSize: { xs: '0.8rem', sm: '0.875rem' }, '&:hover': { backgroundColor: "#f1f5f9" }, order: { xs: 2, sm: 1 } }}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={submitting} fullWidth={isExtraSmall} sx={{ textTransform: "none", borderRadius: "10px", fontWeight: 600, px: { xs: 2, sm: 3 }, fontSize: { xs: '0.8rem', sm: '0.875rem' }, order: { xs: 1, sm: 2 } }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={submitting} sx={{ textTransform: "none", borderRadius: "10px", color: "#64748b", fontSize: { xs: '0.8rem', sm: '0.875rem' }, '&:hover': { backgroundColor: "#f1f5f9" }, order: { xs: 2, sm: 1 } }}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={submitting} sx={{ textTransform: "none", borderRadius: "10px", fontWeight: 600, px: { xs: 2, sm: 3 }, fontSize: { xs: '0.8rem', sm: '0.875rem' }, order: { xs: 1, sm: 2 } }}>
             {submitting ? <CircularProgress size={isExtraSmall ? 20 : 24} color="inherit" /> : "Yes, Delete"}
           </Button>
         </DialogActions>

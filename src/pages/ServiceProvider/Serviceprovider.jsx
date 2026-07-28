@@ -86,7 +86,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 }));
 
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
-  maxHeight: "calc(100vh - 300px)", // adjusted for compact header+search bar row
+  maxHeight: "calc(100vh - 300px)",
   minHeight: "400px",
   width: "100%",
   '&::-webkit-scrollbar': { width: '6px', height: '6px' },
@@ -147,7 +147,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 const AddButton = styled(Button)(({ theme }) => ({
   borderRadius: "12px",
-  padding: "8px 18px", // slightly smaller padding to reduce height
+  padding: "8px 18px",
   fontWeight: 600,
   textTransform: "none",
   fontSize: "0.85rem",
@@ -162,7 +162,38 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "6px 10px", fontSize: "0.75rem", borderRadius: "8px" }
 }));
 
-const SearchField = styled(TextField)(({ theme }) => ({
+// --- UPDATED: Filter input with white background and dark text ---
+const FilterInput = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#ffffff', // white background
+    borderRadius: '6px',
+    color: '#1e293b', // dark text
+    '& fieldset': { borderColor: 'rgba(0,0,0,0.23)' }, // default border
+    '&:hover fieldset': { borderColor: '#6495ED' },
+    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
+    '& input': {
+      padding: '4px 8px',
+      fontSize: '0.7rem',
+      [theme.breakpoints.down('md')]: { fontSize: '0.6rem', padding: '3px 6px' },
+      [theme.breakpoints.down('sm')]: { fontSize: '0.55rem', padding: '2px 5px' },
+      '&::placeholder': {
+        color: 'rgba(0,0,0,0.6)',
+        opacity: 1
+      }
+    }
+  },
+  '& .MuiInputAdornment-root': {
+    marginRight: '2px',
+    '& svg': {
+      fontSize: '0.9rem',
+      color: '#64748b' // dark icon
+    }
+  },
+  width: '100%',
+  minWidth: '50px',
+}));
+
+const MobileSearchField = styled(TextField)(({ theme }) => ({
   flex: 1,
   '& .MuiOutlinedInput-root': {
     borderRadius: "10px",
@@ -240,7 +271,20 @@ export default function ServiceProviderPage() {
 
   const [providers, setProviders] = useState([]);
   const [filteredProviders, setFilteredProviders] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  
+  // --- NEW: per‑column filter state ---
+  const [filters, setFilters] = useState({
+    id: "",
+    serviceprovidername: "",
+    email: "",
+    mobile: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
+  // --- Mobile global search (kept for smaller screens) ---
+  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
+
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -255,12 +299,18 @@ export default function ServiceProviderPage() {
     severity: "success"
   });
 
+  // ------------- SORTING HELPER -------------
+  const sortByIdDesc = (data) => {
+    return [...data].sort((a, b) => b.id - a.id);
+  };
+
   const loadProviders = async () => {
     setLoading(true);
     try {
       const data = await serviceProviderApi.getAll();
-      setProviders(Array.isArray(data) ? data : []);
-      setFilteredProviders(Array.isArray(data) ? data : []);
+      const sorted = sortByIdDesc(Array.isArray(data) ? data : []);
+      setProviders(sorted);
+      setFilteredProviders(sorted);
     } catch (error) {
       console.error("Error loading providers:", error);
       showSnackbar("Failed to load providers: " + error.message, "error");
@@ -275,25 +325,56 @@ export default function ServiceProviderPage() {
     loadProviders();
   }, []);
 
+  // ------------- FILTERING LOGIC (per‑column) -------------
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredProviders(providers);
-      return;
-    }
-    const term = searchTerm.toLowerCase().trim();
-    const filtered = providers.filter(p =>
-      p.serviceprovidername?.toLowerCase().includes(term) ||
-      p.email?.toLowerCase().includes(term) ||
-      p.mobile?.includes(term) ||
-      p.city?.toLowerCase().includes(term) ||
-      p.state?.toLowerCase().includes(term) ||
-      p.pincode?.includes(term)
+    // First apply per‑column filters
+    let filtered = providers;
+
+    // Helper: check if a value matches a filter string (case‑insensitive)
+    const matches = (val, filter) => {
+      if (!filter) return true;
+      if (val == null) return false;
+      return String(val).toLowerCase().includes(filter.toLowerCase());
+    };
+
+    filtered = filtered.filter(p =>
+      matches(p.id, filters.id) &&
+      matches(p.serviceprovidername, filters.serviceprovidername) &&
+      matches(p.email, filters.email) &&
+      matches(p.mobile, filters.mobile) &&
+      matches(p.city, filters.city) &&
+      matches(p.state, filters.state) &&
+      matches(p.pincode, filters.pincode)
     );
+
+    // For mobile, if there's a global search term, apply additional filtering
+    if (isMobile && mobileSearchTerm.trim()) {
+      const term = mobileSearchTerm.toLowerCase().trim();
+      filtered = filtered.filter(p =>
+        matches(p.serviceprovidername, term) ||
+        matches(p.email, term) ||
+        matches(p.mobile, term) ||
+        matches(p.city, term) ||
+        matches(p.state, term) ||
+        matches(p.pincode, term) ||
+        matches(p.id, term)
+      );
+    }
+
     setFilteredProviders(filtered);
-  }, [searchTerm, providers]);
+  }, [providers, filters, mobileSearchTerm, isMobile]);
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
+  };
+
+  // ------------- HANDLERS -------------
+  const handleFilterChange = (field) => (e) => {
+    setFilters(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleMobileSearchChange = (e) => {
+    setMobileSearchTerm(e.target.value);
   };
 
   const handleChange = (e) => {
@@ -362,13 +443,13 @@ export default function ServiceProviderPage() {
 
       if (isAddMode) {
         const newProvider = await serviceProviderApi.create(payload);
-        const updatedProviders = [...providers, newProvider];
+        const updatedProviders = sortByIdDesc([...providers, newProvider]);
         setProviders(updatedProviders);
         setFilteredProviders(updatedProviders);
         showSnackbar("Service Provider Added Successfully!", "success");
       } else {
         const updated = await serviceProviderApi.update(selectedId, payload);
-        const updatedProviders = providers.map(p => p.id === selectedId ? updated : p);
+        const updatedProviders = sortByIdDesc(providers.map(p => p.id === selectedId ? updated : p));
         setProviders(updatedProviders);
         setFilteredProviders(updatedProviders);
         showSnackbar("Service Provider Updated Successfully!", "success");
@@ -391,7 +472,7 @@ export default function ServiceProviderPage() {
     setSubmitting(true);
     try {
       await serviceProviderApi.delete(selectedId);
-      const updatedProviders = providers.filter(p => p.id !== selectedId);
+      const updatedProviders = sortByIdDesc(providers.filter(p => p.id !== selectedId));
       setProviders(updatedProviders);
       setFilteredProviders(updatedProviders);
       showSnackbar("Service Provider Deleted Successfully!", "success");
@@ -429,59 +510,34 @@ export default function ServiceProviderPage() {
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Compact Header */}
+          {/* Header with Add button (no search bar) */}
           <Box sx={{ 
             display: "flex",
             alignItems: "center",
-            mb: 0.5, // reduced margin
-            gap: 1,
-          }}>
-            <BusinessIcon sx={{ color: "#6495ED", fontSize: { xs: 18, sm: 22, md: 26 } }} />
-            <Typography 
-              variant="h6" 
-              component="h1"
-              sx={{ 
-                fontWeight: 700,
-                fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" },
-                color: "#1e293b",
-                lineHeight: 1.2,
-              }}
-            >
-              Service Providers
-            </Typography>
-          </Box>
-
-          {/* Search Bar + Add Button in one row */}
-          <Box sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 2, 
+            justifyContent: "space-between",
             mb: 1.5,
-            [theme.breakpoints.down('sm')]: { flexDirection: "column", alignItems: "stretch" }
+            gap: 1,
+            flexWrap: "wrap"
           }}>
-            <SearchField
-              fullWidth
-              placeholder="Search by company name, email, mobile, city, state, pincode..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                endAdornment: searchTerm && (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                  </InputAdornment>
-                )
-              }}
-            />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <BusinessIcon sx={{ color: "#6495ED", fontSize: { xs: 18, sm: 22, md: 26 } }} />
+              <Typography 
+                variant="h6" 
+                component="h1"
+                sx={{ 
+                  fontWeight: 700,
+                  fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" },
+                  color: "#1e293b",
+                  lineHeight: 1.2,
+                }}
+              >
+                Service Providers
+              </Typography>
+            </Box>
             <AddButton
               variant="contained"
               startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 } }} />}
               onClick={handleAddOpen}
-              sx={{ 
-                flexShrink: 0,
-                minWidth: { xs: '100%', sm: 'auto' },
-                [theme.breakpoints.down('sm')]: { width: '100%' }
-              }}
             >
               Add Provider
             </AddButton>
@@ -493,36 +549,122 @@ export default function ServiceProviderPage() {
               <StyledTableContainer>
                 <Table stickyHeader size={isExtraSmall ? "small" : "medium"}>
                   <GradientHeader>
+                    {/* Header row with column labels */}
                     <TableRow>
-                      <TableCell sx={{ minWidth: { xs: "100px", sm: "140px", md: "180px" } }}>
+                      <TableCell>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
+                          ID
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
                           Company Name
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "120px", sm: "170px", md: "200px" } }}>
+                      <TableCell>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
                           Email
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "90px", sm: "110px", md: "130px" } }}>
+                      <TableCell>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
                           Mobile
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "80px", sm: "100px", md: "120px" } }}>
+                      <TableCell>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
                           City
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "80px", sm: "100px", md: "120px" } }}>
+                      <TableCell>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
                           State
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ minWidth: { xs: "80px", sm: "100px", md: "120px" } }}>
+                      <TableCell>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
                           Pin Code
                         </Typography>
+                      </TableCell>
+                    </TableRow>
+                    {/* Filter row */}
+                    <TableRow>
+                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                        <FilterInput
+                          size="small"
+                          placeholder="Filter ID"
+                          value={filters.id}
+                          onChange={handleFilterChange('id')}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                        <FilterInput
+                          size="small"
+                          placeholder="Filter Name"
+                          value={filters.serviceprovidername}
+                          onChange={handleFilterChange('serviceprovidername')}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                        <FilterInput
+                          size="small"
+                          placeholder="Filter Email"
+                          value={filters.email}
+                          onChange={handleFilterChange('email')}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                        <FilterInput
+                          size="small"
+                          placeholder="Filter Mobile"
+                          value={filters.mobile}
+                          onChange={handleFilterChange('mobile')}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                        <FilterInput
+                          size="small"
+                          placeholder="Filter City"
+                          value={filters.city}
+                          onChange={handleFilterChange('city')}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                        <FilterInput
+                          size="small"
+                          placeholder="Filter State"
+                          value={filters.state}
+                          onChange={handleFilterChange('state')}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                        <FilterInput
+                          size="small"
+                          placeholder="Filter Pin"
+                          value={filters.pincode}
+                          onChange={handleFilterChange('pincode')}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
+                          }}
+                        />
                       </TableCell>
                     </TableRow>
                   </GradientHeader>
@@ -530,6 +672,11 @@ export default function ServiceProviderPage() {
                     {filteredProviders.length > 0 ? (
                       filteredProviders.map((p) => (
                         <StyledTableRow key={p.id} onClick={() => handleRowClick(p)}>
+                          <TableCell>
+                            <Typography sx={{ fontWeight: 500, fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' } }}>
+                              {p.id}
+                            </Typography>
+                          </TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                               <BusinessIcon sx={{ fontSize: { xs: 14, sm: 16, md: 18 }, color: "#6495ED" }} />
@@ -570,12 +717,14 @@ export default function ServiceProviderPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
+                        <TableCell colSpan={7} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
                           <Typography variant="body1" color="text.secondary">
                             <BusinessIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            {searchTerm ? `No providers found matching "${searchTerm}"` : "No service providers added yet"}
+                            {Object.values(filters).some(f => f) 
+                              ? "No providers match your filters" 
+                              : "No service providers added yet"}
                           </Typography>
-                          {!searchTerm && (
+                          {!Object.values(filters).some(f => f) && (
                             <Button
                               variant="outlined"
                               startIcon={<AddIcon />}
@@ -599,8 +748,23 @@ export default function ServiceProviderPage() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile/Tablet Card View
+              // Mobile/Tablet Card View – retains a global search input
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
+                <MobileSearchField
+                  fullWidth
+                  placeholder="Search all fields..."
+                  value={mobileSearchTerm}
+                  onChange={handleMobileSearchChange}
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
+                    endAdornment: mobileSearchTerm && (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
                 <Stack spacing={1.5}>
                   {filteredProviders.length > 0 ? (
                     filteredProviders.map((p, index) => (
@@ -633,6 +797,18 @@ export default function ServiceProviderPage() {
                                   {p.serviceprovidername || '-'}
                                 </Typography>
                               </Box>
+                              <Chip 
+                                label={`ID: ${p.id}`}
+                                size="small"
+                                sx={{ 
+                                  backgroundColor: "#e2e8f0", 
+                                  color: "#1e293b",
+                                  fontWeight: 500,
+                                  fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' },
+                                  height: { xs: '20px', sm: '22px', md: '24px' },
+                                  borderRadius: "6px"
+                                }}
+                              />
                             </Box>
 
                             <Box sx={{ 
@@ -707,9 +883,9 @@ export default function ServiceProviderPage() {
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <BusinessIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
                       <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                        {searchTerm ? `No providers found matching "${searchTerm}"` : "No service providers added yet"}
+                        {mobileSearchTerm ? `No providers found matching "${mobileSearchTerm}"` : "No service providers added yet"}
                       </Typography>
-                      {!searchTerm && (
+                      {!mobileSearchTerm && (
                         <Button
                           variant="outlined"
                           startIcon={<AddIcon />}
@@ -725,7 +901,6 @@ export default function ServiceProviderPage() {
               </Box>
             )}
           </StyledPaper>
-          {/* Add Button below table is removed */}
         </ContentWrapper>
       </MainContent>
 
@@ -772,6 +947,25 @@ export default function ServiceProviderPage() {
 
         <DialogContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
           <Grid container spacing={isExtraSmall ? 1 : isMobile ? 1.5 : 2} sx={{ mt: 0 }}>
+            {/* ID field - read-only, shown only when not in add mode */}
+            {!isAddMode && (
+              <Grid item xs={12}>
+                <StyledTextField
+                  fullWidth
+                  label="ID"
+                  value={selectedId || ''}
+                  disabled
+                  size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <BusinessIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />
+                      </InputAdornment>
+                    )
+                  }}
+                />
+              </Grid>
+            )}
             {Object.keys(emptyForm).map((key) => (
               <Grid item xs={12} md={6} key={key}>
                 <StyledTextField
