@@ -94,10 +94,9 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
-// ---- Table container – increased height to maximum ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
-  maxHeight: "calc(100vh - 180px)",   // Reduced subtraction → taller table
-  minHeight: "500px",                 // Increased minimum height
+  maxHeight: "calc(100vh - 180px)",
+  minHeight: "500px",
   width: "100%",
   overflowX: "auto",
   '&::-webkit-scrollbar': { width: '6px', height: '6px' },
@@ -156,7 +155,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "10px", [theme.breakpoints.down('sm')]: { paddingRight: "6px" }, [theme.breakpoints.down('xs')]: { paddingRight: "4px" } }
 }));
 
-// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
   borderRadius: "10px",
   padding: "6px 16px",
@@ -174,7 +172,6 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
 }));
 
-// ---- Inline Stats (adjustable size) ----
 const InlineStats = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -204,7 +201,6 @@ const InlineStats = styled(Box)(({ theme }) => ({
   }
 }));
 
-// ---- Filter input (white, tiny) ----
 const FilterInput = styled(TextField)(({ theme }) => ({
   '& .MuiOutlinedInput-root': {
     backgroundColor: '#ffffff',
@@ -235,7 +231,6 @@ const FilterInput = styled(TextField)(({ theme }) => ({
   minWidth: '40px',
 }));
 
-// ---- Mobile search field ----
 const MobileSearchField = styled(TextField)(({ theme }) => ({
   flex: 1,
   '& .MuiOutlinedInput-root': {
@@ -287,7 +282,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiInputBase-input': { [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" }, [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" } }
 }));
 
-// ================= MAIN COMPONENT (unchanged) =================
+// ================= MAIN COMPONENT =================
 export default function Student() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -378,6 +373,7 @@ export default function Student() {
     }
   };
 
+  // ================= LOAD DROPDOWNS (FIXED) =================
   const loadDropdowns = async () => {
     try {
       const [classesData, divisionsData, mediumsData, academicYearsData] = await Promise.all([
@@ -386,12 +382,19 @@ export default function Student() {
         mediumApi.getAll().catch(() => []),
         academicYearApi.getAll().catch(() => [])
       ]);
-      setClasses(classesData);
-      setDivisions(divisionsData);
-      setMediums(mediumsData);
-      setAcademicYears(academicYearsData);
+
+      // ✅ Ensure each value is an array – fallback to [] if not
+      setClasses(Array.isArray(classesData) ? classesData : []);
+      setDivisions(Array.isArray(divisionsData) ? divisionsData : []);
+      setMediums(Array.isArray(mediumsData) ? mediumsData : []);
+      setAcademicYears(Array.isArray(academicYearsData) ? academicYearsData : []);
     } catch (error) {
       console.error("Error loading dropdowns:", error);
+      // Also set to empty arrays on any error
+      setClasses([]);
+      setDivisions([]);
+      setMediums([]);
+      setAcademicYears([]);
     }
   };
 
@@ -625,7 +628,6 @@ export default function Student() {
                   Students
                 </Typography>
               </Box>
-              {/* Inline stats – adjustable size */}
               <InlineStats>
                 <span className="stat-chip">Total <span className="num">{students.length}</span></span>
                 <span className="stat-chip active">Active <span className="num">{students.filter(s => s.status === 'ACTIVE').length}</span></span>
@@ -647,7 +649,6 @@ export default function Student() {
                     {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
-                      {/* Name column – wider */}
                       <TableCell sx={{ minWidth: '200px' }}>Name</TableCell>
                       <TableCell sx={{ minWidth: '80px' }}>Roll</TableCell>
                       <TableCell sx={{ minWidth: '100px' }}>Admission</TableCell>
@@ -664,12 +665,11 @@ export default function Student() {
                       <TableCell sx={{ minWidth: '70px' }}>Present</TableCell>
                       <TableCell sx={{ minWidth: '70px' }}>In Bus</TableCell>
                     </TableRow>
-                    {/* Filter row (per‑column) */}
+                    {/* Filter row */}
                     <TableRow>
                       <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
                         <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
                       </TableCell>
-                      {/* Name filter – wider cell */}
                       <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)', minWidth: '200px' }}>
                         <FilterInput size="small" placeholder="Filter Name" value={filters.name} onChange={handleFilterChange('name')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
                       </TableCell>
@@ -833,7 +833,7 @@ export default function Student() {
         </ContentWrapper>
       </MainContent>
 
-      {/* ================= DIALOGS (unchanged) ================= */}
+      {/* ================= DIALOGS ================= */}
       <StyledDialog open={open} onClose={handleCloseDialog} fullWidth maxWidth="lg">
         <DialogTitle sx={{ fontWeight: 700, fontSize: { xs: "0.95rem", sm: "1.1rem", md: "1.25rem" }, color: "#1e293b", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 0.5, pr: 0.5, p: { xs: 1.5, sm: 2, md: 2.5 } }}>
           <span>{selectedId ? "Student Details" : "Add New Student"}</span>
