@@ -1,5 +1,5 @@
 // src/pages/Conductor/Conductor.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -27,11 +27,14 @@ import {
   Card,
   CardContent,
   Stack,
-  Fade,
   Grid,
   InputAdornment,
   TableContainer as MuiTableContainer,
-  Avatar
+  Avatar,
+  FormControl,
+  InputLabel,
+  Select,
+  OutlinedInput
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -39,17 +42,17 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import PersonIcon from "@mui/icons-material/Person";
 import PhoneIcon from "@mui/icons-material/Phone";
-import BadgeIcon from "@mui/icons-material/Badge";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import DriveEtaIcon from "@mui/icons-material/DriveEta";
 import EmailIcon from "@mui/icons-material/Email";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
-import SearchIcon from "@mui/icons-material/Search";          // <-- added
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { styled } from "@mui/material/styles";
 import conductorApi from "../../api/conductorApi";
 
-// ================= STYLED COMPONENTS =================
+// ================= STYLED COMPONENTS (unchanged) =================
 const PageContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   minHeight: "100vh",
@@ -90,7 +93,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
-// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 280px)",
   minHeight: "400px",
@@ -152,7 +154,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
-// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
   borderRadius: "10px",
   padding: "6px 16px",
@@ -170,7 +171,6 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
 }));
 
-// ---- Inline Stats (adjustable size) ----
 const InlineStats = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -198,54 +198,6 @@ const InlineStats = styled(Box)(({ theme }) => ({
     '&.suspended .num': { color: "#d97706" },
     '&.terminated .num': { color: "#dc2626" },
   }
-}));
-
-// ---- Filter input (white background, tiny) ----
-const FilterInput = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#ffffff',
-    borderRadius: '4px',
-    color: '#1e293b',
-    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-    '&:hover fieldset': { borderColor: '#6495ED' },
-    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
-    '& input': {
-      padding: '2px 6px',
-      fontSize: '0.6rem',
-      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
-      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
-      '&::placeholder': {
-        color: 'rgba(0,0,0,0.4)',
-        opacity: 1
-      }
-    }
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: '2px',
-    '& svg': {
-      fontSize: '0.7rem',
-      color: '#94a3b8'
-    }
-  },
-  width: '100%',
-  minWidth: '40px',
-}));
-
-// ---- Mobile search field ----
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    '&:hover fieldset': { borderColor: "#6495ED" },
-    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
-    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
-  },
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -278,16 +230,6 @@ export default function Conductor() {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isExtraSmall = useMediaQuery('(max-width: 380px)');
 
-  const licenseTypeOptions = [
-    { value: 'LMV', label: 'LMV - Light Motor Vehicle' },
-    { value: 'LMV-TR', label: 'LMV-TR - Light Motor Vehicle – Transport' },
-    { value: 'HMV', label: 'HMV - Heavy Motor Vehicle' },
-    { value: 'HGMV', label: 'HGMV - Heavy Goods Motor Vehicle' },
-    { value: 'HPMV', label: 'HPMV - Heavy Passenger Motor Vehicle' },
-    { value: 'MGV', label: 'MGV - Medium Goods Vehicle' },
-    { value: 'MPV', label: 'MPV - Medium Passenger Vehicle' }
-  ];
-
   const emptyForm = {
     id: null,
     name: "",
@@ -297,7 +239,6 @@ export default function Conductor() {
     licenseNumber: "",
     idCard: null,
     idCardUrl: "",
-    licenseType: "",
     licensePhoto: null,
     licensePhotoUrl: "",
     conductorPhoto: null,
@@ -315,26 +256,6 @@ export default function Conductor() {
   };
 
   const [conductors, setConductors] = useState([]);
-  const [filteredConductors, setFilteredConductors] = useState([]);
-  // ---- Per‑column filters (desktop) ----
-  const [filters, setFilters] = useState({
-    id: "",
-    name: "",
-    phone: "",
-    email: "",
-    licenseNumber: "",
-    licenseType: "",
-    licenseExpiryDate: "",
-    experienceYears: "",
-    status: "",
-    joiningDate: "",
-    terminateDate: "",
-    city: "",
-    state: ""
-  });
-  // ---- Mobile global search ----
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
-
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -349,22 +270,24 @@ export default function Conductor() {
     severity: "success"
   });
 
-  // ================= SORTING HELPER (descending ID) =================
+  // --- FILTER STATE ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterState, setFilterState] = useState('');
+  const [filterCity, setFilterCity] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
   const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
 
-  // ================= LOAD CONDUCTORS =================
   const loadConductors = async () => {
     setLoading(true);
     try {
       const data = await conductorApi.getAllConductors();
       const sorted = sortByIdDesc(Array.isArray(data) ? data : []);
       setConductors(sorted);
-      setFilteredConductors(sorted);
     } catch (error) {
       console.error('Error fetching conductors:', error);
       showSnackbar(error.message || "Failed to load conductors", "error");
       setConductors([]);
-      setFilteredConductors([]);
     } finally {
       setLoading(false);
     }
@@ -374,59 +297,41 @@ export default function Conductor() {
     loadConductors();
   }, []);
 
-  // ================= FILTERING LOGIC =================
-  useEffect(() => {
-    let filtered = conductors;
-
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    filtered = filtered.filter(c =>
-      matches(c.id, filters.id) &&
-      matches(c.name, filters.name) &&
-      matches(c.phone, filters.phone) &&
-      matches(c.email, filters.email) &&
-      matches(c.licenseNumber, filters.licenseNumber) &&
-      matches(c.licenseType, filters.licenseType) &&
-      matches(c.licenseExpiryDate, filters.licenseExpiryDate) &&
-      matches(c.experienceYears, filters.experienceYears) &&
-      matches(c.status, filters.status) &&
-      matches(c.joiningDate, filters.joiningDate) &&
-      matches(c.terminateDate, filters.terminateDate) &&
-      matches(c.city, filters.city) &&
-      matches(c.state, filters.state)
-    );
-
-    // Mobile global search (extra)
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter(c =>
-        matches(c.id, term) ||
-        matches(c.name, term) ||
-        matches(c.phone, term) ||
-        matches(c.email, term) ||
-        matches(c.licenseNumber, term) ||
-        matches(c.licenseType, term) ||
-        matches(c.licenseExpiryDate, term) ||
-        matches(c.experienceYears, term) ||
-        matches(c.status, term) ||
-        matches(c.joiningDate, term) ||
-        matches(c.terminateDate, term) ||
-        matches(c.city, term) ||
-        matches(c.state, term)
-      );
-    }
-
-    setFilteredConductors(filtered);
-  }, [conductors, filters, mobileSearchTerm, isMobile]);
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
+  // --- DERIVED FILTER OPTIONS ---
+  const states = useMemo(() => {
+    const unique = new Set(conductors.map(d => d.state).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [conductors]);
+
+  const cities = useMemo(() => {
+    const unique = new Set(conductors.map(d => d.city).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [conductors]);
+
+  const statusOptions = ['Join', 'Suspended', 'Terminated'];
+
+  // --- FILTERED CONDUCTORS ---
+  const filteredConductors = useMemo(() => {
+    return conductors.filter(conductor => {
+      const matchesSearch =
+        conductor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conductor.phone.includes(searchQuery) ||
+        (conductor.email && conductor.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        conductor.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesState = filterState === '' || conductor.state === filterState;
+      const matchesCity = filterCity === '' || conductor.city === filterCity;
+      const matchesStatus = filterStatus === '' || conductor.status === filterStatus;
+
+      return matchesSearch && matchesState && matchesCity && matchesStatus;
+    });
+  }, [conductors, searchQuery, filterState, filterCity, filterStatus]);
+
+  // --- HANDLERS (unchanged) ---
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -444,15 +349,6 @@ export default function Conductor() {
       });
     };
     reader.readAsDataURL(file);
-  };
-
-  // Filter handlers
-  const handleFilterChange = (field) => (e) => {
-    setFilters(prev => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
   };
 
   const handleAddOpen = () => {
@@ -570,13 +466,11 @@ export default function Conductor() {
         result = await conductorApi.createConductor(payload);
         const updated = sortByIdDesc([...conductors, result]);
         setConductors(updated);
-        setFilteredConductors(updated);
         showSnackbar("Conductor added successfully!", "success");
       } else {
         result = await conductorApi.updateConductor(selectedId, payload);
         const updated = sortByIdDesc(conductors.map(c => c.id === selectedId ? result : c));
         setConductors(updated);
-        setFilteredConductors(updated);
         showSnackbar("Conductor updated successfully!", "success");
       }
       handleCloseDialog();
@@ -596,7 +490,6 @@ export default function Conductor() {
       await conductorApi.deleteConductor(selectedId);
       const updated = sortByIdDesc(conductors.filter(c => c.id !== selectedId));
       setConductors(updated);
-      setFilteredConductors(updated);
       showSnackbar("Conductor deleted successfully!", "success");
       setConfirmOpen(false);
       handleCloseDialog();
@@ -626,7 +519,15 @@ export default function Conductor() {
     } catch { return dateString; }
   };
 
-  // ================= RENDER FORM =================
+  // --- CLEAR ALL FILTERS ---
+  const clearFilters = () => {
+    setSearchQuery('');
+    setFilterState('');
+    setFilterCity('');
+    setFilterStatus('');
+  };
+
+  // ================= RENDER FORM (unchanged) =================
   const renderForm = () => (
     <Grid container spacing={isExtraSmall ? 1 : isMobile ? 1.5 : 2} sx={{ mt: 0 }}>
       {Object.keys(emptyForm)
@@ -634,7 +535,7 @@ export default function Conductor() {
         .map((k) => {
           const label = k.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
           const isDate = k === "joiningDate" || k === "terminateDate" || k === "licenseExpiryDate";
-          const isSelect = k === "status" || k === "licenseType";
+          const isSelect = k === "status";
           const isPassword = k === "password";
           const isEmail = k === "email";
           
@@ -653,14 +554,12 @@ export default function Conductor() {
           };
 
           if (isSelect) {
-            const options = k === "status" 
-              ? ['Join', 'Terminated', 'Suspended']
-              : licenseTypeOptions;
+            const options = ['Join', 'Terminated', 'Suspended'];
             return (
-              <Grid item xs={12} sm={6} md={k === "licenseType" ? 6 : 4} key={k}>
+              <Grid item xs={12} sm={6} md={4} key={k}>
                 <TextField
                   select
-                  label={k === "licenseType" ? "License Type" : label}
+                  label={label}
                   name={k}
                   value={form[k] || ""}
                   onChange={handleChange}
@@ -670,11 +569,9 @@ export default function Conductor() {
                   size={isExtraSmall ? "small" : "medium"}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
                 >
-                  <MenuItem value="">Select {k === "licenseType" ? "License Type" : label}</MenuItem>
+                  <MenuItem value="">Select {label}</MenuItem>
                   {options.map((opt) => (
-                    <MenuItem key={typeof opt === 'string' ? opt : opt.value} value={typeof opt === 'string' ? opt : opt.value}>
-                      {typeof opt === 'string' ? opt : opt.label}
-                    </MenuItem>
+                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                   ))}
                 </TextField>
               </Grid>
@@ -686,7 +583,7 @@ export default function Conductor() {
               <TextField
                 label={label}
                 name={k}
-                type={isPassword ? "password" : isDate ? "date" : isEmail ? "email" : "text"}
+                type={isPassword ? "password" : isEmail ? "email" : "text"}
                 value={form[k] || ""}
                 onChange={handleChange}
                 disabled={!editMode || submitting}
@@ -698,7 +595,7 @@ export default function Conductor() {
                     <InputAdornment position="start">{getIcon()}</InputAdornment>
                   ) : null
                 }}
-                placeholder={!isDate && !isPassword ? `Enter ${label.toLowerCase()}` : ""}
+                placeholder={isDate ? "YYYY-MM-DD" : (!isPassword ? `Enter ${label.toLowerCase()}` : "")}
                 size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
               />
@@ -777,49 +674,152 @@ export default function Conductor() {
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header with inline stats and smaller Add button */}
+          {/* Header with stats, search box, and Add button */}
           <Box sx={{ 
             display: "flex", 
             flexDirection: { xs: "column", sm: "row" }, 
             justifyContent: "space-between", 
             alignItems: { xs: "stretch", sm: "center" }, 
-            gap: { xs: 1, sm: 2 }, 
+            gap: { xs: 1.5, sm: 2 }, 
             mb: { xs: 2, sm: 2 } 
           }}>
-            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: { xs: 1, sm: 2 } }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PersonIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
-                <Typography variant="h6" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1rem", sm: "1.2rem", md: "1.4rem" }, color: "#1e293b" }}>
-                  Conductors
-                </Typography>
-              </Box>
-              {/* Inline stats */}
+            <Box sx={{ 
+              display: "flex", 
+              flexDirection: { xs: "column", sm: "row" }, 
+              alignItems: { xs: "stretch", sm: "center" }, 
+              flexWrap: "wrap", 
+              gap: { xs: 1, sm: 2 },
+              flex: 1
+            }}>
               <InlineStats>
                 <span className="stat-chip">Total <span className="num">{conductors.length}</span></span>
                 <span className="stat-chip active">Active <span className="num">{conductors.filter(c => c.status === 'Join').length}</span></span>
                 <span className="stat-chip suspended">Suspended <span className="num">{conductors.filter(c => c.status === 'Suspended').length}</span></span>
                 <span className="stat-chip terminated">Terminated <span className="num">{conductors.filter(c => c.status === 'Terminated').length}</span></span>
               </InlineStats>
+
+              {/* Search Input */}
+              <TextField
+                placeholder="Search conductors..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                size="small"
+                sx={{
+                  minWidth: { xs: '100%', sm: '200px' },
+                  maxWidth: { xs: '100%', sm: '260px' },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '10px',
+                    backgroundColor: 'white',
+                    '& fieldset': { borderColor: '#e2e8f0' },
+                    '&:hover fieldset': { borderColor: '#6495ED' },
+                    '&.Mui-focused fieldset': { borderColor: '#6495ED' }
+                  }
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchQuery && (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setSearchQuery('')} sx={{ p: 0.5 }}>
+                        <ClearIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
             </Box>
+
             <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={handleAddOpen}>
               Add Conductor
             </AddButton>
+          </Box>
+
+          {/* Filter Bar (above table) */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            alignItems: { xs: 'stretch', sm: 'center' }, 
+            gap: 2, 
+            mb: 2,
+            p: { xs: 1, sm: 1.5 },
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            flexWrap: 'wrap'
+          }}>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>State</InputLabel>
+              <Select
+                value={filterState}
+                onChange={(e) => setFilterState(e.target.value)}
+                input={<OutlinedInput label="State" />}
+              >
+                <MenuItem value="">All States</MenuItem>
+                {states.map(state => (
+                  <MenuItem key={state} value={state}>{state}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>City</InputLabel>
+              <Select
+                value={filterCity}
+                onChange={(e) => setFilterCity(e.target.value)}
+                input={<OutlinedInput label="City" />}
+              >
+                <MenuItem value="">All Cities</MenuItem>
+                {cities.map(city => (
+                  <MenuItem key={city} value={city}>{city}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                input={<OutlinedInput label="Status" />}
+              >
+                <MenuItem value="">All Statuses</MenuItem>
+                {statusOptions.map(status => (
+                  <MenuItem key={status} value={status}>{status}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Button 
+              variant="text" 
+              onClick={clearFilters} 
+              size="small" 
+              sx={{ 
+                color: '#64748b', 
+                textTransform: 'none',
+                fontWeight: 500,
+                '&:hover': { backgroundColor: 'transparent', color: '#1e293b' }
+              }}
+              startIcon={<ClearIcon sx={{ fontSize: 18 }} />}
+            >
+              Clear
+            </Button>
           </Box>
 
           {/* Table/List View */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
-                <Table stickyHeader sx={{ minWidth: 1400 }}>  {/* force horizontal scroll */}
+                <Table stickyHeader sx={{ minWidth: 1300 }}>
                   <GradientHeader>
-                    {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
                       <TableCell sx={{ minWidth: '150px' }}>Name</TableCell>
                       <TableCell sx={{ minWidth: '110px' }}>Phone</TableCell>
                       <TableCell sx={{ minWidth: '160px' }}>Email</TableCell>
                       <TableCell sx={{ minWidth: '120px' }}>License #</TableCell>
-                      <TableCell sx={{ minWidth: '130px' }}>License Type</TableCell>
                       <TableCell sx={{ minWidth: '120px' }}>License Exp</TableCell>
                       <TableCell sx={{ minWidth: '80px' }}>Exp</TableCell>
                       <TableCell sx={{ minWidth: '90px' }} align="center">Status</TableCell>
@@ -827,48 +827,6 @@ export default function Conductor() {
                       <TableCell sx={{ minWidth: '110px' }}>Terminated</TableCell>
                       <TableCell sx={{ minWidth: '120px' }}>City</TableCell>
                       <TableCell sx={{ minWidth: '100px' }}>State</TableCell>
-                    </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Name" value={filters.name} onChange={handleFilterChange('name')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Phone" value={filters.phone} onChange={handleFilterChange('phone')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Email" value={filters.email} onChange={handleFilterChange('email')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter License" value={filters.licenseNumber} onChange={handleFilterChange('licenseNumber')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Type" value={filters.licenseType} onChange={handleFilterChange('licenseType')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Exp" value={filters.licenseExpiryDate} onChange={handleFilterChange('licenseExpiryDate')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Exp" value={filters.experienceYears} onChange={handleFilterChange('experienceYears')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Status" value={filters.status} onChange={handleFilterChange('status')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Joining" value={filters.joiningDate} onChange={handleFilterChange('joiningDate')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Term" value={filters.terminateDate} onChange={handleFilterChange('terminateDate')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter City" value={filters.city} onChange={handleFilterChange('city')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter State" value={filters.state} onChange={handleFilterChange('state')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
@@ -880,7 +838,6 @@ export default function Conductor() {
                           <TableCell>{c.phone}</TableCell>
                           <TableCell>{c.email || '-'}</TableCell>
                           <TableCell><Chip label={c.licenseNumber} size="small" variant="outlined" sx={{ borderColor: "#e2e8f0", color: "#475569", fontSize: "0.6rem" }} /></TableCell>
-                          <TableCell>{c.licenseType && <Chip label={c.licenseType} size="small" sx={{ bgcolor: "#fef3c7", color: "#d97706", fontSize: "0.5rem" }} />}</TableCell>
                           <TableCell>{formatDate(c.licenseExpiryDate)}</TableCell>
                           <TableCell><Chip label={`${c.experienceYears}y`} size="small" sx={{ bgcolor: "#f1f5f9", color: "#475569", fontSize: "0.5rem" }} /></TableCell>
                           <TableCell align="center"><Chip label={c.status} size="small" sx={{ bgcolor: getStatusColor(c.status).bg, color: getStatusColor(c.status).color, fontWeight: 600, fontSize: "0.6rem", minWidth: "60px" }} /></TableCell>
@@ -892,16 +849,14 @@ export default function Conductor() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={13} align="center" sx={{ py: 4 }}>
+                        <TableCell colSpan={12} align="center" sx={{ py: 4 }}>
                           <Typography variant="body1" color="text.secondary">
                             <PersonIcon sx={{ fontSize: 40, display: 'block', margin: '0 auto 8px', opacity: 0.3 }} />
-                            {Object.values(filters).some(f => f) ? "No conductors match your filters" : "No conductors added yet"}
+                            No conductors match your filters
                           </Typography>
-                          {!Object.values(filters).some(f => f) && (
-                            <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2, borderRadius: "10px", textTransform: "none" }}>
-                              Add your first conductor
-                            </Button>
-                          )}
+                          <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2, borderRadius: "10px", textTransform: "none" }}>
+                            Add a new conductor
+                          </Button>
                         </TableCell>
                       </TableRow>
                     )}
@@ -909,23 +864,7 @@ export default function Conductor() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile Card View with global search
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
                   {filteredConductors.length > 0 ? (
                     filteredConductors.map(c => (
@@ -952,14 +891,10 @@ export default function Conductor() {
                   ) : (
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <PersonIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
-                      <Typography variant="body1" color="text.secondary">
-                        {mobileSearchTerm ? `No conductors found matching "${mobileSearchTerm}"` : "No conductors added yet"}
-                      </Typography>
-                      {!mobileSearchTerm && (
-                        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
-                          Add first conductor
-                        </Button>
-                      )}
+                      <Typography variant="body1" color="text.secondary">No conductors match your filters</Typography>
+                      <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
+                        Add new conductor
+                      </Button>
                     </Box>
                   )}
                 </Stack>
@@ -969,7 +904,6 @@ export default function Conductor() {
         </ContentWrapper>
       </MainContent>
 
-      {/* ================= DIALOG ================= */}
       <StyledDialog open={open} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
           <span>{isAddMode ? "Add New Conductor" : "Conductor Details"}</span>
@@ -994,7 +928,6 @@ export default function Conductor() {
         )}
       </StyledDialog>
 
-      {/* Delete Confirmation */}
       <StyledDialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ color: "#dc2626" }}>Confirm Delete</DialogTitle>
         <DialogContent><Typography>Are you sure you want to delete this conductor?</Typography></DialogContent>
@@ -1006,7 +939,6 @@ export default function Conductor() {
         </DialogActions>
       </StyledDialog>
 
-      {/* Snackbar */}
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} variant="filled" sx={{ borderRadius: "12px" }}>
           {snackbar.message}

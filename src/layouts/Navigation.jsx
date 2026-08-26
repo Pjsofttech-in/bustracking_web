@@ -25,6 +25,7 @@ const Division = lazy(() => import("../pages/Student/Division"));
 const Scan = lazy(() => import("../pages/Student/Scan"));
 const StudentFeePayment = lazy(() => import("../pages/Student/StudentFeePayment"));
 
+
 // Icons
 import MenuIcon from "@mui/icons-material/Menu";
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -45,6 +46,7 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { keyframes } from "@mui/system";
+import FeeStructureManagement from "../pages/feeStructure/FeeStructureManagement";
 
 const drawerWidth = 180;
 const miniWidth = 70;
@@ -125,13 +127,13 @@ export default function Navigation() {
         { key: "class", icon: <ClassIcon />, label: "Class" },
         { key: "medium", icon: <LanguageIcon />, label: "Medium" },
         { key: "division", icon: <GroupsIcon />, label: "Division" },
-        { key: "studentfeepayment", icon: <PaymentIcon />, label: "Student Fee" },
         { key: "scan", icon: <QrCodeScannerIcon />, label: "QR Scan" },
       ]
     }
   ];
 
-  const topLevelItems = [
+  // Standalone items (order: Service Provider, Driver, Conductor)
+  const standaloneItems = [
     { key: "service", icon: <MiscellaneousServicesIcon />, label: "Service Provider" },
     { key: "driver", icon: <AirlineSeatReclineNormalIcon />, label: "Driver" },
     { key: "conductor", icon: <PersonIcon />, label: "Conductor" },
@@ -173,7 +175,7 @@ export default function Navigation() {
       }}
     >
       <Box sx={{ p: 2, fontWeight: "bold", fontSize: 18 }}>
-        <DashboardIcon sx={{ fontSize: 18, mr: 1 }} /> Main Dashboard
+        <DashboardIcon sx={{ fontSize: 18, mr: 1 }} /> Main 
       </Box>
       <List>
         <ListItemButton sx={{ borderRadius: 2, mb: 1 }}>
@@ -184,18 +186,7 @@ export default function Navigation() {
         Settings
       </Typography>
       <List>
-        {/* Top-level items */}
-        {topLevelItems.map(item => (
-          <ListItemButton
-            key={item.key}
-            onClick={() => openSettingsPage(item.key)}
-            sx={{ borderRadius: 2, mb: 0.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
-          >
-            {item.icon}
-            <ListItemText sx={{ ml: 2 }} primary={item.label} />
-          </ListItemButton>
-        ))}
-        {/* Sections with expand/collapse */}
+        {/* 1. Sections (Bus, Student) first */}
         {settingsSections.map(section => {
           const isExpanded = expandedSections[section.heading] || false;
           return (
@@ -230,6 +221,17 @@ export default function Navigation() {
             </React.Fragment>
           );
         })}
+        {/* 2. Standalone items after sections */}
+        {standaloneItems.map(item => (
+          <ListItemButton
+            key={item.key}
+            onClick={() => openSettingsPage(item.key)}
+            sx={{ borderRadius: 2, mb: 0.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
+            {item.icon}
+            <ListItemText sx={{ ml: 2 }} primary={item.label} />
+          </ListItemButton>
+        ))}
       </List>
     </Drawer>
   );
@@ -256,18 +258,7 @@ export default function Navigation() {
       }}
     >
       <List sx={{ display: "flex", flexDirection: "column", gap: hoverOpen ? 0.3 : 0.3 }}>
-        {/* Top-level items */}
-        {topLevelItems.map(item => (
-          <ListItemButton
-            key={item.key}
-            sx={menuItemStyle}
-            onClick={() => openSettingsPage(item.key)}
-          >
-            {item.icon}
-            {hoverOpen && <ListItemText sx={{ ml: 2 }} primary={item.label} />}
-          </ListItemButton>
-        ))}
-        {/* Sections */}
+        {/* 1. Sections (Bus, Student) first */}
         {settingsSections.map(section => {
           const isExpanded = expandedSections[section.heading] || false;
           return (
@@ -307,6 +298,17 @@ export default function Navigation() {
             </React.Fragment>
           );
         })}
+        {/* 2. Standalone items after sections */}
+        {standaloneItems.map(item => (
+          <ListItemButton
+            key={item.key}
+            sx={menuItemStyle}
+            onClick={() => openSettingsPage(item.key)}
+          >
+            {item.icon}
+            {hoverOpen && <ListItemText sx={{ ml: 2 }} primary={item.label} />}
+          </ListItemButton>
+        ))}
       </List>
     </Box>
   );
@@ -430,9 +432,10 @@ export default function Navigation() {
           }}>
             {tab === 0 && <Dashboard/>}
             {tab === 1 && <Student/>}
-            {tab === 2 && <Typography>Payment Page</Typography>}
+            {tab === 2 && <StudentFeePayment/>}
             {tab === 3 && <BusTrip/>}
-            {tab === 4 && <Typography>Collection Page</Typography>}
+            {tab === 4 && <FeeStructureManagement/>}
+            
             {tab === 5 && <Typography>Feedback Page</Typography>}
           </Box>
         )}
@@ -467,7 +470,6 @@ export default function Navigation() {
             {settingsPage === "division" && <Division/>}
             {settingsPage === "medium" && <Medium/>}
             {settingsPage === "scan" && <Scan/>}
-            {settingsPage === "studentfeepayment" && <StudentFeePayment/>}
           </Box>
         )}
 

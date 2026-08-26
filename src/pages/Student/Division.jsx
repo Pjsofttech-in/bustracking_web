@@ -1,5 +1,5 @@
 // src/pages/Division/Division.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Button,
@@ -29,20 +29,25 @@ import {
   Grow,
   Tooltip,
   InputAdornment,
-  TableContainer as MuiTableContainer
+  TableContainer as MuiTableContainer,
+  FormControl,
+  InputLabel,
+  Select,
+  OutlinedInput,
+  MenuItem
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import BusinessIcon from "@mui/icons-material/Business";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { styled } from "@mui/material/styles";
 
-// ✅ Import divisionApi
 import divisionApi from "../../api/divisionApi";
 
 // ================= STYLED COMPONENTS =================
-// (All styled components are exactly as in your provided file)
 const PageContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   minHeight: "100vh",
@@ -163,17 +168,32 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "6px 10px", fontSize: "0.75rem", borderRadius: "8px" }
 }));
 
-const StatsCard = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  borderRadius: "12px",
-  border: "1px solid #f1f5f9",
-  boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-  transition: "all 0.2s ease",
-  '&:hover': { borderColor: "#6495ED", boxShadow: "0 4px 12px rgba(100, 149, 237, 0.08)" },
-  [theme.breakpoints.down('md')]: { padding: theme.spacing(1.5) },
-  [theme.breakpoints.down('sm')]: { padding: theme.spacing(1.2), borderRadius: "10px" },
-  [theme.breakpoints.down('xs')]: { padding: theme.spacing(1), borderRadius: "8px" },
-  '@media (max-width: 380px)': { padding: theme.spacing(0.75), borderRadius: "6px" }
+// ----- InlineStats component (same as other pages) -----
+const InlineStats = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  flexWrap: "wrap",
+  [theme.breakpoints.down('sm')]: { gap: theme.spacing(1) },
+  '& .stat-chip': {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    backgroundColor: "#f1f5f9",
+    borderRadius: "20px",
+    padding: "4px 14px",
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "#1e293b",
+    [theme.breakpoints.down('sm')]: { fontSize: "0.7rem", padding: "2px 10px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.65rem", padding: "2px 8px" },
+    '& .num': {
+      fontWeight: 700,
+      color: "#6495ED",
+      marginLeft: "2px",
+    },
+    '&.active .num': { color: "#22c55e" },
+  }
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -214,7 +234,6 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 export default function Division() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isExtraSmall = useMediaQuery('(max-width: 380px)');
 
@@ -231,16 +250,21 @@ export default function Division() {
     severity: "success"
   });
 
+  // ---- FILTER STATE ----
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
   // ================= LOAD DATA =================
   const loadData = async () => {
     setLoading(true);
     try {
-      // ✅ Replace api.divisions.getAll() with divisionApi.getAll()
-      const data = await divisionApi.getAll();
-      setData(data);
+      const response = await divisionApi.getAll();
+      const divisions = Array.isArray(response) ? response : [];
+      setData(divisions);
     } catch (error) {
       console.error("Error fetching division data", error);
       showSnackbar("Failed to load divisions", "error");
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -251,22 +275,30 @@ export default function Division() {
   }, []);
 
   const showSnackbar = (message, severity = "success") => {
-    setSnackbar({
-      open: true,
-      message,
-      severity
-    });
+    setSnackbar({ open: true, message, severity });
   };
 
-  // ================= HANDLE CHANGE =================
+  // ================= FILTERED DATA =================
+  const filteredData = useMemo(() => {
+    return data.filter(item => {
+      const matchesSearch = item.divisionName.toLowerCase().includes(searchQuery.toLowerCase());
+      // All divisions are considered "Active" – status filter only shows all for now
+      const matchesStatus = filterStatus === '' || filterStatus === 'Active';
+      return matchesSearch && matchesStatus;
+    });
+  }, [data, searchQuery, filterStatus]);
+
+  // ================= CLEAR FILTERS =================
+  const clearFilters = () => {
+    setSearchQuery('');
+    setFilterStatus('');
+  };
+
+  // ================= HANDLERS =================
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ================= HANDLE SUBMIT =================
   const handleSubmit = async () => {
     if (!form.divisionName.trim()) {
       showSnackbar("Division name is required", "warning");
@@ -275,13 +307,9 @@ export default function Division() {
 
     setSubmitting(true);
     try {
-      const divisionData = {
-        divisionName: form.divisionName.trim()
-      };
-      
-      // ✅ Replace api.divisions.create()
+      const divisionData = { divisionName: form.divisionName.trim() };
       const newDivision = await divisionApi.create(divisionData);
-      setData([...data, newDivision]);
+      setData(prev => [...prev, newDivision]);
       showSnackbar("Division Added Successfully", "success");
       setForm({ divisionName: "" });
       setOpen(false);
@@ -293,7 +321,6 @@ export default function Division() {
     }
   };
 
-  // ================= HANDLE DELETE =================
   const handleDeleteClick = (division) => {
     setSelectedDivision(division);
     setDeleteDialogOpen(true);
@@ -302,9 +329,8 @@ export default function Division() {
   const handleConfirmDelete = async () => {
     setSubmitting(true);
     try {
-      // ✅ Replace api.divisions.delete()
       await divisionApi.delete(selectedDivision.divisionId);
-      setData(data.filter(item => item.divisionId !== selectedDivision.divisionId));
+      setData(prev => prev.filter(item => item.divisionId !== selectedDivision.divisionId));
       showSnackbar("Division Deleted Successfully", "success");
       setDeleteDialogOpen(false);
       setSelectedDivision(null);
@@ -321,14 +347,7 @@ export default function Division() {
     return (
       <PageContainer>
         <MainContent>
-          <Box sx={{ 
-            display: "flex", 
-            justifyContent: "center", 
-            alignItems: "center", 
-            height: "60vh",
-            flexDirection: "column",
-            gap: 2
-          }}>
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh", flexDirection: "column", gap: 2 }}>
             <CircularProgress size={isExtraSmall ? 30 : 40} sx={{ color: "#6495ED" }} />
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: isExtraSmall ? '0.75rem' : '0.875rem' }}>
               Loading divisions...
@@ -344,42 +363,58 @@ export default function Division() {
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header Section */}
+          {/* Header with title, inline stats, and Add button */}
           <Box sx={{ 
             display: "flex", 
             flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
             alignItems: { xs: "stretch", sm: "center" },
             gap: { xs: 1.5, sm: 2, md: 3 },
-            mb: { xs: 2, sm: 2.5, md: 4 }
+            mb: { xs: 2, sm: 2.5, md: 3 }
           }}>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography 
-                variant="h5" 
-                component="h1"
-                sx={{ 
-                  fontWeight: 700,
-                  fontSize: { xs: "1.1rem", sm: "1.3rem", md: "1.5rem", lg: "1.75rem" },
-                  color: "#1e293b",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: { xs: 1, sm: 1.5 },
-                  flexWrap: "wrap",
-                }}
-              >
-                <LocationCityIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
-                <span>Divisions</span>
-              </Typography>
-              <Typography 
-                variant="body2" 
-                color="text.secondary"
-                sx={{ 
-                  mt: 0.25,
-                  fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.875rem" }
-                }}
-              >
-                Manage organizational divisions
-              </Typography>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              flexWrap: 'wrap',
+              gap: { xs: 1, sm: 2 },
+              flex: 1
+            }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography 
+                  variant="h5" 
+                  component="h1"
+                  sx={{ 
+                    fontWeight: 700,
+                    fontSize: { xs: "1.1rem", sm: "1.3rem", md: "1.5rem", lg: "1.75rem" },
+                    color: "#1e293b",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: { xs: 1, sm: 1.5 },
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <LocationCityIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
+                  <span>Divisions</span>
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ 
+                    mt: 0.25,
+                    fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.875rem" }
+                  }}
+                >
+                  Manage organizational divisions
+                </Typography>
+              </Box>
+
+              {/* InlineStats - placed next to title */}
+              <InlineStats>
+                <span className="stat-chip">Total <span className="num">{data.length}</span></span>
+                <span className="stat-chip active">Active <span className="num">{data.length}</span></span>
+                <span className="stat-chip">Routes <span className="num">{data.length * 3}</span></span>
+              </InlineStats>
             </Box>
 
             <AddButton
@@ -391,54 +426,83 @@ export default function Division() {
             </AddButton>
           </Box>
 
-          {/* Statistics Cards */}
+          {/* Filter Bar (Search + Status) above table */}
           <Box sx={{ 
-            display: "grid",
-            gridTemplateColumns: { 
-              xs: "1fr 1fr", 
-              sm: "repeat(4, 1fr)" 
-            },
-            gap: { xs: 1, sm: 1.5, md: 2 },
-            mb: { xs: 2, sm: 2.5, md: 3 }
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            alignItems: { xs: 'stretch', sm: 'center' }, 
+            gap: 2, 
+            mb: 2,
+            p: { xs: 1, sm: 1.5 },
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            flexWrap: 'wrap'
           }}>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Total Divisions
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" } }}>
-                {data.length}
-              </Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Active Divisions
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#22c55e" }}>
-                {data.length}
-              </Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Total Routes
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }, color: "#6495ED" }}>
-                {data.length * 3}
-              </Typography>
-            </StatsCard>
-            <StatsCard>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                Last Updated
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: "0.7rem", sm: "0.8rem", md: "1rem" }, color: "#64748b" }}>
-                {data.length > 0 ? "Today" : "No Data"}
-              </Typography>
-            </StatsCard>
+            <TextField
+              placeholder="Search divisions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              size="small"
+              sx={{
+                minWidth: { xs: '100%', sm: '200px' },
+                maxWidth: { xs: '100%', sm: '260px' },
+                flex: 1,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '10px',
+                  backgroundColor: 'white',
+                  '& fieldset': { borderColor: '#e2e8f0' },
+                  '&:hover fieldset': { borderColor: '#6495ED' },
+                  '&.Mui-focused fieldset': { borderColor: '#6495ED' }
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchQuery('')} sx={{ p: 0.5 }}>
+                      <ClearIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                input={<OutlinedInput label="Status" />}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="Active">Active</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Button 
+              variant="text" 
+              onClick={clearFilters} 
+              size="small" 
+              sx={{ 
+                color: '#64748b', 
+                textTransform: 'none',
+                fontWeight: 500,
+                '&:hover': { backgroundColor: 'transparent', color: '#1e293b' }
+              }}
+              startIcon={<ClearIcon sx={{ fontSize: 18 }} />}
+            >
+              Clear
+            </Button>
           </Box>
 
           {/* Table/List View */}
           <StyledPaper>
             {isDesktop ? (
-              // Desktop Table View
               <StyledTableContainer>
                 <Table stickyHeader size={isExtraSmall ? "small" : "medium"}>
                   <GradientHeader>
@@ -466,8 +530,8 @@ export default function Division() {
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
-                    {data.length > 0 ? (
-                      data.map((row) => (
+                    {filteredData.length > 0 ? (
+                      filteredData.map((row) => (
                         <StyledTableRow key={row.divisionId}>
                           <TableCell sx={{ fontWeight: 600 }}>{row.divisionId}</TableCell>
                           <TableCell>
@@ -524,7 +588,7 @@ export default function Division() {
                         <TableCell colSpan={4} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
                           <Typography variant="body1" color="text.secondary">
                             <LocationCityIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            No divisions added yet
+                            {data.length === 0 ? "No divisions added yet" : "No divisions match your filters"}
                           </Typography>
                           <Button
                             variant="outlined"
@@ -539,7 +603,7 @@ export default function Division() {
                               fontSize: { xs: '0.75rem', sm: '0.875rem' }
                             }}
                           >
-                            Add your first division
+                            {data.length === 0 ? "Add your first division" : "Add a new division"}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -548,11 +612,10 @@ export default function Division() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile/Tablet Card View
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
                 <Stack spacing={1.5}>
-                  {data.length > 0 ? (
-                    data.map((row, index) => (
+                  {filteredData.length > 0 ? (
+                    filteredData.map((row, index) => (
                       <Grow in key={row.divisionId} timeout={300 * (index + 1) * 0.1}>
                         <MobileCard>
                           <CardContent sx={{ 
@@ -661,7 +724,7 @@ export default function Division() {
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <LocationCityIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
                       <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                        No divisions added yet
+                        {data.length === 0 ? "No divisions added yet" : "No divisions match your filters"}
                       </Typography>
                       <Button
                         variant="outlined"
@@ -669,7 +732,7 @@ export default function Division() {
                         onClick={() => setOpen(true)}
                         sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                       >
-                        Add first division
+                        {data.length === 0 ? "Add first division" : "Add new division"}
                       </Button>
                     </Box>
                   )}
@@ -681,12 +744,7 @@ export default function Division() {
       </MainContent>
 
       {/* Add Division Dialog */}
-      <StyledDialog 
-        open={open} 
-        onClose={() => setOpen(false)} 
-        fullWidth 
-        maxWidth="sm"
-      >
+      <StyledDialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle sx={{ 
           fontWeight: 700,
           fontSize: { xs: "0.95rem", sm: "1.1rem", md: "1.25rem" },

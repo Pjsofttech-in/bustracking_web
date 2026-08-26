@@ -106,7 +106,6 @@ const MapWrapper = styled(Box)(({ theme }) => ({
     width: "100%",
     height: "100%",
   },
-  // Hide zoom controls on mobile
   "& .leaflet-control-zoom": {
     [theme.breakpoints.down('sm')]: {
       display: "none",
@@ -231,31 +230,38 @@ export default function BusLocation() {
     8: "#f97316"
   };
 
-  // ================= LOAD DATA =================
+  // ================= LOAD DATA (FIXED) =================
   const loadData = async () => {
     setLoading(true);
     try {
       const busesData = await busApi.getAll();
-      setBuses(busesData);
-      if (busesData && busesData.length > 0) {
-        const firstBus = busesData[0];
-        setSelectedBus(firstBus.id.toString());
+      // ✅ Ensure busesData is an array
+      const busArray = Array.isArray(busesData) ? busesData : [];
+      setBuses(busArray);
+      if (busArray.length > 0) {
+        const firstBus = busArray[0];
+        setSelectedBus(firstBus.id?.toString() || "");
         await loadLocation(firstBus.id);
+      } else {
+        setSelectedBus("");
       }
     } catch (error) {
       console.error("Error loading data:", error);
       showSnackbar("Failed to load buses", "error");
+      setBuses([]);
     } finally {
       setLoading(false);
     }
   };
 
   const loadLocation = async (busId) => {
+    if (!busId) return;
     try {
       const latest = await busLocationApi.getLatest(busId);
       setCurrentLocation(latest);
       const history = await busLocationApi.getHistory(busId, 20);
-      setLocationHistory(history || []);
+      // ✅ Ensure history is an array
+      setLocationHistory(Array.isArray(history) ? history : []);
     } catch (error) {
       console.error("Error loading location:", error);
       // Fallback to mock if no data
@@ -314,12 +320,11 @@ export default function BusLocation() {
     if (!selectedBus) return;
     setSimulating(true);
     const busId = Number(selectedBus);
-    // Generate a new random location within ~500m radius
     const lat = 18.5204 + (Math.random() - 0.5) * 0.01;
     const lng = 73.8567 + (Math.random() - 0.5) * 0.01;
     const speed = Math.floor(Math.random() * 60) + 10;
     const heading = Math.floor(Math.random() * 360);
-    const directionId = Math.floor(heading / 45) + 1; // crude mapping
+    const directionId = Math.floor(heading / 45) + 1;
 
     try {
       await busLocationApi.save({
@@ -403,14 +408,21 @@ export default function BusLocation() {
             <FormControl sx={{ minWidth: { xs: '100%', sm: 250 } }}>
               <InputLabel>Select Bus</InputLabel>
               <Select value={selectedBus} onChange={handleBusChange} label="Select Bus" sx={{ borderRadius: 2 }}>
-                {buses.map((bus) => (
-                  <MenuItem key={bus.id} value={bus.id.toString()}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <DirectionsBusIcon sx={{ fontSize: 18, color: busColors[bus.id] || '#6495ED' }} />
-                      <Typography>{bus.busNumber} ({bus.busType})</Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
+                {buses.map((bus) => {
+                  // ✅ Safe fallback for bus.id and busNumber
+                  const id = bus?.id;
+                  const busNumber = bus?.busNumber || 'Unknown';
+                  const busType = bus?.busType || '';
+                  const color = busColors[id] || '#6495ED';
+                  return (
+                    <MenuItem key={id || Math.random()} value={id?.toString() || ''}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <DirectionsBusIcon sx={{ fontSize: 18, color }} />
+                        <Typography>{busNumber} {busType ? `(${busType})` : ''}</Typography>
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
 
@@ -498,7 +510,7 @@ export default function BusLocation() {
           )}
 
           {/* History */}
-          {locationHistory.length > 0 && (
+          {Array.isArray(locationHistory) && locationHistory.length > 0 && (
             <StyledPaper>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
                 <Typography variant="h6" sx={{ fontSize: '0.95rem', fontWeight: 600, display: 'flex', alignItems: 'center' }}><HistoryIcon sx={{ fontSize: 20, color: '#6495ED', mr: 1 }} /> Location History</Typography>

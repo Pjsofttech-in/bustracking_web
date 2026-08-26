@@ -1,10 +1,11 @@
 // src/pages/Student/Student.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import studentApi from "../../api/studentApi";
 import classApi from "../../api/classApi";
 import divisionApi from "../../api/divisionApi";
 import mediumApi from "../../api/mediumApi";
 import academicYearApi from "../../api/academicYearApi";
+import busRouteApi from "../../api/busRouteApi";  // ✅ import
 import {
   Box,
   Button,
@@ -38,7 +39,11 @@ import {
   MenuItem,
   Switch,
   FormControlLabel,
-  Grid
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  OutlinedInput,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -51,6 +56,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import LanguageIcon from "@mui/icons-material/Language";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { styled } from "@mui/material/styles";
 
 // ================= STYLED COMPONENTS =================
@@ -201,52 +207,6 @@ const InlineStats = styled(Box)(({ theme }) => ({
   }
 }));
 
-const FilterInput = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#ffffff',
-    borderRadius: '4px',
-    color: '#1e293b',
-    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-    '&:hover fieldset': { borderColor: '#6495ED' },
-    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
-    '& input': {
-      padding: '2px 6px',
-      fontSize: '0.6rem',
-      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
-      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
-      '&::placeholder': {
-        color: 'rgba(0,0,0,0.4)',
-        opacity: 1
-      }
-    }
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: '2px',
-    '& svg': {
-      fontSize: '0.7rem',
-      color: '#94a3b8'
-    }
-  },
-  width: '100%',
-  minWidth: '40px',
-}));
-
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    '&:hover fieldset': { borderColor: "#6495ED" },
-    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
-    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
-  },
-}));
-
 const MobileCard = styled(Card)(({ theme }) => ({
   borderRadius: "12px",
   border: "1px solid #f1f5f9",
@@ -305,35 +265,11 @@ export default function Student() {
     academicYear: "",
     status: "",
     present: false,
-    inBus: false
+    inBus: false,
+    routeId: "",   // ✅ added
   };
 
-  // ---- Data ----
   const [students, setStudents] = useState([]);
-  const [filteredStudents, setFilteredStudents] = useState([]);
-
-  // ---- Per‑column filters (desktop) ----
-  const [filters, setFilters] = useState({
-    id: "",
-    name: "",
-    rollNumber: "",
-    admission: "",
-    parentName: "",
-    parentPhone: "",
-    parentEmail: "",
-    bloodGroup: "",
-    age: "",
-    studentClass: "",
-    division: "",
-    medium: "",
-    academicYear: "",
-    status: "",
-    present: "",
-    inBus: ""
-  });
-  // ---- Mobile global search ----
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
-
   const [form, setForm] = useState(emptyForm);
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -351,8 +287,19 @@ export default function Student() {
   const [divisions, setDivisions] = useState([]);
   const [mediums, setMediums] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
+  const [routes, setRoutes] = useState([]);   // ✅ added
 
-  // ================= SORTING HELPER (descending ID) =================
+  // ---- FILTER STATE ----
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterClass, setFilterClass] = useState('');
+  const [filterDivision, setFilterDivision] = useState('');
+  const [filterMedium, setFilterMedium] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  // ✅ new route filters
+  const [filterRouteId, setFilterRouteId] = useState('');
+  const [filterRouteName, setFilterRouteName] = useState('');
+
+  // ================= SORTING HELPER =================
   const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
 
   // ================= LOAD DATA =================
@@ -362,39 +309,37 @@ export default function Student() {
       const data = await studentApi.getAll();
       const sorted = sortByIdDesc(Array.isArray(data) ? data : []);
       setStudents(sorted);
-      setFilteredStudents(sorted);
     } catch (error) {
       console.error("Error loading students:", error);
       showSnackbar("Failed to load students", "error");
       setStudents([]);
-      setFilteredStudents([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ================= LOAD DROPDOWNS (FIXED) =================
+  // ================= LOAD DROPDOWNS =================
   const loadDropdowns = async () => {
     try {
-      const [classesData, divisionsData, mediumsData, academicYearsData] = await Promise.all([
+      const [classesData, divisionsData, mediumsData, academicYearsData, routesData] = await Promise.all([
         classApi.getAll().catch(() => []),
         divisionApi.getAll().catch(() => []),
         mediumApi.getAll().catch(() => []),
-        academicYearApi.getAll().catch(() => [])
+        academicYearApi.getAll().catch(() => []),
+        busRouteApi.getAll().catch(() => [])   // ✅ load routes
       ]);
-
-      // ✅ Ensure each value is an array – fallback to [] if not
       setClasses(Array.isArray(classesData) ? classesData : []);
       setDivisions(Array.isArray(divisionsData) ? divisionsData : []);
       setMediums(Array.isArray(mediumsData) ? mediumsData : []);
       setAcademicYears(Array.isArray(academicYearsData) ? academicYearsData : []);
+      setRoutes(Array.isArray(routesData) ? routesData : []);
     } catch (error) {
       console.error("Error loading dropdowns:", error);
-      // Also set to empty arrays on any error
       setClasses([]);
       setDivisions([]);
       setMediums([]);
       setAcademicYears([]);
+      setRoutes([]);
     }
   };
 
@@ -403,76 +348,65 @@ export default function Student() {
     loadDropdowns();
   }, []);
 
-  // ================= FILTERING LOGIC =================
-  useEffect(() => {
-    let filtered = students;
-
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    // Apply per‑column filters
-    filtered = filtered.filter(s =>
-      matches(s.id, filters.id) &&
-      matches(s.name, filters.name) &&
-      matches(s.rollNumber, filters.rollNumber) &&
-      matches(s.admission, filters.admission) &&
-      matches(s.parentName, filters.parentName) &&
-      matches(s.parentPhone, filters.parentPhone) &&
-      matches(s.parentEmail, filters.parentEmail) &&
-      matches(s.bloodGroup, filters.bloodGroup) &&
-      matches(s.age, filters.age) &&
-      matches(s.studentClass, filters.studentClass) &&
-      matches(s.division, filters.division) &&
-      matches(s.medium, filters.medium) &&
-      matches(s.academicYear, filters.academicYear) &&
-      matches(s.status, filters.status) &&
-      matches(s.present ? "yes" : "no", filters.present) &&
-      matches(s.inBus ? "yes" : "no", filters.inBus)
-    );
-
-    // Mobile global search (extra)
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter(s =>
-        matches(s.id, term) ||
-        matches(s.name, term) ||
-        matches(s.rollNumber, term) ||
-        matches(s.admission, term) ||
-        matches(s.parentName, term) ||
-        matches(s.parentPhone, term) ||
-        matches(s.parentEmail, term) ||
-        matches(s.bloodGroup, term) ||
-        matches(s.age, term) ||
-        matches(s.studentClass, term) ||
-        matches(s.division, term) ||
-        matches(s.medium, term) ||
-        matches(s.academicYear, term) ||
-        matches(s.status, term)
-      );
-    }
-
-    setFilteredStudents(filtered);
-  }, [students, filters, mobileSearchTerm, isMobile]);
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
+  };
+
+  // ================= FILTER OPTIONS =================
+  const classOptions = useMemo(() => {
+    const unique = new Set(students.map(s => s.studentClass).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [students]);
+
+  const divisionOptions = useMemo(() => {
+    const unique = new Set(students.map(s => s.division).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [students]);
+
+  const mediumOptions = useMemo(() => {
+    const unique = new Set(students.map(s => s.medium).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [students]);
+
+  const statusOptions = ['ACTIVE', 'INACTIVE'];
+
+  // ================= FILTERED STUDENTS =================
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => {
+      const matchesSearch =
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.parentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.parentPhone.includes(searchQuery) ||
+        student.parentEmail.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesClass = filterClass === '' || student.studentClass === filterClass;
+      const matchesDivision = filterDivision === '' || student.division === filterDivision;
+      const matchesMedium = filterMedium === '' || student.medium === filterMedium;
+      const matchesStatus = filterStatus === '' || student.status === filterStatus;
+      // ✅ route filters
+      const matchesRouteId = filterRouteId === '' || String(student.routeId).includes(filterRouteId);
+      const matchesRouteName = filterRouteName === '' || (student.routeName && student.routeName.toLowerCase().includes(filterRouteName.toLowerCase()));
+
+      return matchesSearch && matchesClass && matchesDivision && matchesMedium && matchesStatus && matchesRouteId && matchesRouteName;
+    });
+  }, [students, searchQuery, filterClass, filterDivision, filterMedium, filterStatus, filterRouteId, filterRouteName]);
+
+  // ================= CLEAR FILTERS =================
+  const clearFilters = () => {
+    setSearchQuery('');
+    setFilterClass('');
+    setFilterDivision('');
+    setFilterMedium('');
+    setFilterStatus('');
+    setFilterRouteId('');      // ✅
+    setFilterRouteName('');    // ✅
   };
 
   // ================= HANDLERS =================
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
-  };
-
-  const handleFilterChange = (field) => (e) => {
-    setFilters(prev => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
   };
 
   const handleAdd = () => {
@@ -529,20 +463,19 @@ export default function Student() {
         academicYear: form.academicYear || "",
         status: form.status || "ACTIVE",
         present: form.present || false,
-        inBus: form.inBus || false
+        inBus: form.inBus || false,
+        routeId: form.routeId ? Number(form.routeId) : null   // ✅ convert to number
       };
 
       if (selectedId) {
         const updatedStudent = await studentApi.update(selectedId, payload);
         const updatedList = sortByIdDesc(students.map(s => s.id === selectedId ? updatedStudent : s));
         setStudents(updatedList);
-        setFilteredStudents(updatedList);
         showSnackbar("Student updated successfully!", "success");
       } else {
         const newStudent = await studentApi.create(payload);
         const updatedList = sortByIdDesc([...students, newStudent]);
         setStudents(updatedList);
-        setFilteredStudents(updatedList);
         showSnackbar("Student added successfully!", "success");
       }
       handleCloseDialog();
@@ -562,7 +495,6 @@ export default function Student() {
       await studentApi.delete(selectedId);
       const updatedList = sortByIdDesc(students.filter(s => s.id !== selectedId));
       setStudents(updatedList);
-      setFilteredStudents(updatedList);
       showSnackbar("Student deleted successfully!", "success");
       setDeleteDialogOpen(false);
       handleCloseDialog();
@@ -612,44 +544,139 @@ export default function Student() {
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* ----- HEADER with inline stats and smaller Add button ----- */}
-          <Box sx={{ 
-            display: "flex", 
-            flexDirection: { xs: "column", sm: "row" }, 
-            justifyContent: "space-between", 
-            alignItems: { xs: "stretch", sm: "center" }, 
-            gap: { xs: 1, sm: 2 }, 
-            mb: { xs: 2, sm: 2.5 } 
+          {/* ----- HEADER with stats, search, add button ----- */}
+          <Box sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: { xs: 1.5, sm: 2 },
+            mb: { xs: 2, sm: 2.5 }
           }}>
-            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: { xs: 1, sm: 2 } }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PersonIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
-                <Typography variant="h6" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1rem", sm: "1.2rem", md: "1.4rem" }, color: "#1e293b" }}>
-                  Students
-                </Typography>
-              </Box>
+            <Box sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "stretch", sm: "center" },
+              flexWrap: "wrap",
+              gap: { xs: 1, sm: 2 },
+              flex: 1
+            }}>
               <InlineStats>
                 <span className="stat-chip">Total <span className="num">{students.length}</span></span>
                 <span className="stat-chip active">Active <span className="num">{students.filter(s => s.status === 'ACTIVE').length}</span></span>
                 <span className="stat-chip present">Present <span className="num">{students.filter(s => s.present).length}</span></span>
                 <span className="stat-chip bus">In Bus <span className="num">{students.filter(s => s.inBus).length}</span></span>
               </InlineStats>
+              <TextField
+                placeholder="Search students..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                size="small"
+                sx={{
+                  minWidth: { xs: '100%', sm: '200px' },
+                  maxWidth: { xs: '100%', sm: '260px' },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '10px',
+                    backgroundColor: 'white',
+                    '& fieldset': { borderColor: '#e2e8f0' },
+                    '&:hover fieldset': { borderColor: '#6495ED' },
+                    '&.Mui-focused fieldset': { borderColor: '#6495ED' }
+                  }
+                }}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} /></InputAdornment>,
+                  endAdornment: searchQuery && (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setSearchQuery('')} sx={{ p: 0.5 }}>
+                        <ClearIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
             </Box>
             <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={handleAdd}>
               Add Student
             </AddButton>
           </Box>
 
-          {/* ----- TABLE / LIST VIEW ----- */}
+          {/* ----- FILTER BAR – added route filters ----- */}
+          <Box sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: 2,
+            mb: 2,
+            p: { xs: 1, sm: 1.5 },
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            flexWrap: 'wrap'
+          }}>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>Class</InputLabel>
+              <Select value={filterClass} onChange={(e) => setFilterClass(e.target.value)} input={<OutlinedInput label="Class" />}>
+                <MenuItem value="">All Classes</MenuItem>
+                {classOptions.map(cls => <MenuItem key={cls} value={cls}>{cls}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>Division</InputLabel>
+              <Select value={filterDivision} onChange={(e) => setFilterDivision(e.target.value)} input={<OutlinedInput label="Division" />}>
+                <MenuItem value="">All Divisions</MenuItem>
+                {divisionOptions.map(div => <MenuItem key={div} value={div}>{div}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>Medium</InputLabel>
+              <Select value={filterMedium} onChange={(e) => setFilterMedium(e.target.value)} input={<OutlinedInput label="Medium" />}>
+                <MenuItem value="">All Mediums</MenuItem>
+                {mediumOptions.map(med => <MenuItem key={med} value={med}>{med}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>Status</InputLabel>
+              <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} input={<OutlinedInput label="Status" />}>
+                <MenuItem value="">All Statuses</MenuItem>
+                {statusOptions.map(status => <MenuItem key={status} value={status}>{status}</MenuItem>)}
+              </Select>
+            </FormControl>
+            {/* ✅ New route filters */}
+            <TextField
+              size="small"
+              label="Route ID"
+              value={filterRouteId}
+              onChange={(e) => setFilterRouteId(e.target.value)}
+              sx={{ minWidth: { xs: '100%', sm: '120px' }, flex: 1 }}
+              InputProps={{ type: 'number' }}
+            />
+            <TextField
+              size="small"
+              label="Route Name"
+              value={filterRouteName}
+              onChange={(e) => setFilterRouteName(e.target.value)}
+              sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}
+            />
+            <Button
+              variant="text" onClick={clearFilters} size="small"
+              sx={{ color: '#64748b', textTransform: 'none', fontWeight: 500, '&:hover': { backgroundColor: 'transparent', color: '#1e293b' } }}
+              startIcon={<ClearIcon sx={{ fontSize: 18 }} />}
+            >
+              Clear
+            </Button>
+          </Box>
+
+          {/* ----- TABLE / CARDS ----- */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
-                <Table stickyHeader size={isExtraSmall ? "small" : "medium"} sx={{ minWidth: 1200 }}>
+                <Table stickyHeader size={isExtraSmall ? "small" : "medium"} sx={{ minWidth: 1400 }}>
                   <GradientHeader>
-                    {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
                       <TableCell sx={{ minWidth: '200px' }}>Name</TableCell>
+                      <TableCell sx={{ minWidth: '80px' }}>Route ID</TableCell>
+                      <TableCell sx={{ minWidth: '140px' }}>Route Name</TableCell>
                       <TableCell sx={{ minWidth: '80px' }}>Roll</TableCell>
                       <TableCell sx={{ minWidth: '100px' }}>Admission</TableCell>
                       <TableCell sx={{ minWidth: '120px' }}>Parent Name</TableCell>
@@ -665,57 +692,6 @@ export default function Student() {
                       <TableCell sx={{ minWidth: '70px' }}>Present</TableCell>
                       <TableCell sx={{ minWidth: '70px' }}>In Bus</TableCell>
                     </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)', minWidth: '200px' }}>
-                        <FilterInput size="small" placeholder="Filter Name" value={filters.name} onChange={handleFilterChange('name')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.rollNumber} onChange={handleFilterChange('rollNumber')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.admission} onChange={handleFilterChange('admission')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.parentName} onChange={handleFilterChange('parentName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.parentPhone} onChange={handleFilterChange('parentPhone')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.parentEmail} onChange={handleFilterChange('parentEmail')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.bloodGroup} onChange={handleFilterChange('bloodGroup')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.age} onChange={handleFilterChange('age')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.studentClass} onChange={handleFilterChange('studentClass')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.division} onChange={handleFilterChange('division')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.medium} onChange={handleFilterChange('medium')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.academicYear} onChange={handleFilterChange('academicYear')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.status} onChange={handleFilterChange('status')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="yes/no" value={filters.present} onChange={handleFilterChange('present')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="yes/no" value={filters.inBus} onChange={handleFilterChange('inBus')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                    </TableRow>
                   </GradientHeader>
                   <TableBody>
                     {filteredStudents.length > 0 ? (
@@ -730,6 +706,8 @@ export default function Student() {
                               </Typography>
                             </Box>
                           </TableCell>
+                          <TableCell>{s.routeId || '-'}</TableCell>
+                          <TableCell>{s.routeName || '-'}</TableCell>
                           <TableCell>{s.rollNumber}</TableCell>
                           <TableCell>{formatDate(s.admission)}</TableCell>
                           <TableCell>{s.parentName}</TableCell>
@@ -748,16 +726,14 @@ export default function Student() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={16} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
+                        <TableCell colSpan={18} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
                           <Typography variant="body1" color="text.secondary">
                             <PersonIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            {Object.values(filters).some(f => f) ? "No students match your filters" : "No students added yet"}
+                            {students.length === 0 ? "No students added yet" : "No students match your filters"}
                           </Typography>
-                          {!Object.values(filters).some(f => f) && (
-                            <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAdd} sx={{ mt: 2, borderRadius: "10px", textTransform: "none", borderColor: "#6495ED", color: "#6495ED", fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                              Add your first student
-                            </Button>
-                          )}
+                          <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAdd} sx={{ mt: 2, borderRadius: "10px", textTransform: "none", borderColor: "#6495ED", color: "#6495ED", fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                            {students.length === 0 ? "Add your first student" : "Add a new student"}
+                          </Button>
                         </TableCell>
                       </TableRow>
                     )}
@@ -765,23 +741,7 @@ export default function Student() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // ----- MOBILE CARD VIEW with global search -----
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
                   {filteredStudents.length > 0 ? (
                     filteredStudents.map((s, index) => (
@@ -795,6 +755,10 @@ export default function Student() {
                                   <PersonIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 }, color: "#6495ED" }} />
                                   {s.name}
                                 </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                  <Typography variant="caption" sx={{ fontSize: '0.55rem', color: '#64748b' }}>Route ID: {s.routeId || '-'}</Typography>
+                                  <Typography variant="caption" sx={{ fontSize: '0.55rem', color: '#64748b', ml: 1 }}>Route: {s.routeName || '-'}</Typography>
+                                </Box>
                               </Box>
                               <Chip label={s.status} size="small" sx={{ bgcolor: getStatusColor(s.status).bg, color: getStatusColor(s.status).color, fontWeight: 600, fontSize: { xs: "0.55rem", sm: "0.6rem", md: "0.65rem" }, borderRadius: "6px", height: { xs: "20px", sm: "22px", md: "24px" }, flexShrink: 0 }} />
                             </Box>
@@ -817,13 +781,11 @@ export default function Student() {
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <PersonIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
                       <Typography variant="body1" color="text.secondary">
-                        {mobileSearchTerm ? `No students found matching "${mobileSearchTerm}"` : "No students added yet"}
+                        {students.length === 0 ? "No students added yet" : "No students match your filters"}
                       </Typography>
-                      {!mobileSearchTerm && (
-                        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAdd} sx={{ mt: 2 }}>
-                          Add first student
-                        </Button>
-                      )}
+                      <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAdd} sx={{ mt: 2 }}>
+                        {students.length === 0 ? "Add first student" : "Add new student"}
+                      </Button>
                     </Box>
                   )}
                 </Stack>
@@ -862,7 +824,7 @@ export default function Student() {
               <StyledTextField label="Roll Number" name="rollNumber" value={form.rollNumber || ""} onChange={handleChange} disabled={!isEdit || submitting} fullWidth required size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} />
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
-              <StyledTextField label="Admission Date" name="admission" type="date" value={form.admission || ""} onChange={handleChange} disabled={!isEdit || submitting} fullWidth size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} InputLabelProps={{ shrink: true }} />
+              <StyledTextField label="Admission Date" name="admission" type="date" value={form.admission || ""} onChange={handleChange} disabled={!isEdit || submitting} fullWidth size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} slotProps={{ inputLabel: { shrink: true } }} />
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <StyledTextField label="Parent Name" name="parentName" value={form.parentName || ""} onChange={handleChange} disabled={!isEdit || submitting} fullWidth size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} />
@@ -901,6 +863,24 @@ export default function Student() {
               <StyledTextField select label="Status" name="status" value={form.status || ""} onChange={handleChange} disabled={!isEdit || submitting} fullWidth size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}>
                 <MenuItem value="ACTIVE">Active</MenuItem>
                 <MenuItem value="INACTIVE">Inactive</MenuItem>
+              </StyledTextField>
+            </Grid>
+            {/* ✅ Route selection dropdown */}
+            <Grid item xs={12} sm={6} md={4}>
+              <StyledTextField
+                select
+                label="Route"
+                name="routeId"
+                value={form.routeId || ""}
+                onChange={handleChange}
+                disabled={!isEdit || submitting}
+                fullWidth
+                size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
+              >
+                <MenuItem value="">None</MenuItem>
+                {routes.map(r => (
+                  <MenuItem key={r.id} value={r.id}>{r.routeName}</MenuItem>
+                ))}
               </StyledTextField>
             </Grid>
             <Grid item xs={12} sm={6} md={4}>

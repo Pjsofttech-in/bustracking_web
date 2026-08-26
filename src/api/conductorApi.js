@@ -5,7 +5,7 @@ const BASE_URL = ""; // proxy handles it
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 30000,
+  timeout: 120000,
   headers: { "Content-Type": "application/json" },
 });
 

@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   base: '/bustracking/',
-  
+  //  base: '/',
   server: {
     port: 5173,
     proxy: {
@@ -25,6 +25,7 @@ export default defineConfig({
       '/student-scans': { target: 'http://localhost:8080', changeOrigin: true },
       '/bus-trips': { target: 'http://localhost:8080', changeOrigin: true },
       '/dashboard': { target: 'http://localhost:8080', changeOrigin: true },
+       '/fee-structures': { target: 'http://localhost:8080', changeOrigin: true },
     }
   },
   build: {

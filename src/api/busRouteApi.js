@@ -1,3 +1,4 @@
+// src/api/busRouteApi.js
 import axios from "axios";
 
 const BASE_URL = ""; // proxy handles it
@@ -16,8 +17,9 @@ api.interceptors.response.use(
   }
 );
 
-
 // ============ BUS ROUTE CRUD ============
+// Note: The payload (data) for create/update no longer includes busId, driverId, or conductorId.
+// These fields are optional on the backend and will be set to null if omitted.
 
 export const getAllBusRoutes = async () => {
   const response = await api.get("/bus-routes");
@@ -30,6 +32,8 @@ export const getBusRouteById = async (id) => {
 };
 
 export const createBusRoute = async (data) => {
+  // data should contain: routeName, description, startStopId, endStopId,
+  // startTime, endTime, totalDistanceKm, estimatedTimeMin, status, stopIds[]
   const response = await api.post("/bus-routes", data);
   return response.data;
 };

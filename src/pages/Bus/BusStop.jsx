@@ -1,11 +1,12 @@
 // src/pages/BusStop/BusStop.jsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box, TextField, Button, Paper, Table, TableHead, TableRow, TableCell, TableBody,
   Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Typography, Chip,
   Snackbar, Alert, CircularProgress, useTheme, useMediaQuery, Card, CardContent,
   Stack, Fade, Grow, Tooltip, Grid, InputAdornment,
-  TableContainer as MuiTableContainer
+  TableContainer as MuiTableContainer,
+  FormControl, InputLabel, Select, MenuItem
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -15,6 +16,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import PlaceIcon from "@mui/icons-material/Place";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { styled } from "@mui/material/styles";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -72,7 +74,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
-// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 280px)",
   minHeight: "400px",
@@ -134,7 +135,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
-// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
   borderRadius: "10px",
   padding: "6px 16px",
@@ -152,7 +152,6 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
 }));
 
-// ---- Inline Stats (adjustable size) ----
 const InlineStats = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -179,54 +178,6 @@ const InlineStats = styled(Box)(({ theme }) => ({
     '&.pending .num': { color: "#d97706" },
     '&.reached .num': { color: "#16a34a" },
   }
-}));
-
-// ---- Filter input (white background, tiny) ----
-const FilterInput = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#ffffff',
-    borderRadius: '4px',
-    color: '#1e293b',
-    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-    '&:hover fieldset': { borderColor: '#6495ED' },
-    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
-    '& input': {
-      padding: '2px 6px',
-      fontSize: '0.6rem',
-      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
-      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
-      '&::placeholder': {
-        color: 'rgba(0,0,0,0.4)',
-        opacity: 1
-      }
-    }
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: '2px',
-    '& svg': {
-      fontSize: '0.7rem',
-      color: '#94a3b8'
-    }
-  },
-  width: '100%',
-  minWidth: '40px',
-}));
-
-// ---- Mobile search field ----
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    '&:hover fieldset': { borderColor: "#6495ED" },
-    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
-    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
-  },
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -345,18 +296,6 @@ export default function BusStop() {
   };
 
   const [stops, setStops] = useState([]);
-  const [filteredStops, setFilteredStops] = useState([]);
-  // ---- Per‑column filters (desktop) ----
-  const [filters, setFilters] = useState({
-    id: '',
-    stopName: '',
-    latitude: '',
-    longitude: '',
-    status: ''
-  });
-  // ---- Mobile global search ----
-  const [mobileSearchTerm, setMobileSearchTerm] = useState('');
-
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -372,22 +311,22 @@ export default function BusStop() {
   });
   const [mapCenter, setMapCenter] = useState({ lat: 19.0760, lng: 72.8777 });
 
-  // ================= SORTING HELPER (descending ID) =================
+  // ---- FILTER STATE ----
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
   const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
 
-  // ================= LOAD DATA =================
   const loadData = async () => {
     setLoading(true);
     try {
       const data = await busStopApi.getAll();
       const sorted = sortByIdDesc(Array.isArray(data) ? data : []);
       setStops(sorted);
-      setFilteredStops(sorted);
     } catch (error) {
       console.error("Error loading data:", error);
       showSnackbar("Failed to load bus stops", "error");
       setStops([]);
-      setFilteredStops([]);
     } finally {
       setLoading(false);
     }
@@ -397,54 +336,31 @@ export default function BusStop() {
     loadData();
   }, []);
 
-  // ================= FILTERING LOGIC =================
-  useEffect(() => {
-    let filtered = stops;
-
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    filtered = filtered.filter(s =>
-      matches(s.id, filters.id) &&
-      matches(s.stopName, filters.stopName) &&
-      matches(s.latitude, filters.latitude) &&
-      matches(s.longitude, filters.longitude) &&
-      matches(s.reached ? 'reached' : 'pending', filters.status)
-    );
-
-    // Mobile global search
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter(s =>
-        matches(s.id, term) ||
-        matches(s.stopName, term) ||
-        matches(s.latitude, term) ||
-        matches(s.longitude, term) ||
-        matches(s.reached ? 'reached' : 'pending', term)
-      );
-    }
-
-    setFilteredStops(filtered);
-  }, [stops, filters, mobileSearchTerm, isMobile]);
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
+  // ================= FILTERED STOPS =================
+  const filteredStops = useMemo(() => {
+    return stops.filter(stop => {
+      const matchesSearch = stop.stopName.toLowerCase().includes(searchQuery.toLowerCase().trim());
+      let matchesStatus = true;
+      if (statusFilter === 'pending') {
+        matchesStatus = !stop.reached;
+      } else if (statusFilter === 'reached') {
+        matchesStatus = stop.reached;
+      }
+      return matchesSearch && matchesStatus;
+    });
+  }, [stops, searchQuery, statusFilter]);
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+  };
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  // Filter handlers
-  const handleFilterChange = (field) => (e) => {
-    setFilters(prev => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
   };
 
   const handleAddOpen = () => {
@@ -499,13 +415,11 @@ export default function BusStop() {
         const newStop = await busStopApi.create(payload);
         const updated = sortByIdDesc([...stops, newStop]);
         setStops(updated);
-        setFilteredStops(updated);
         showSnackbar("Bus stop added successfully!", "success");
       } else {
         const updatedStop = await busStopApi.update(selectedId, payload);
         const updated = sortByIdDesc(stops.map(s => s.id === selectedId ? updatedStop : s));
         setStops(updated);
-        setFilteredStops(updated);
         showSnackbar("Bus stop updated successfully!", "success");
       }
       handleCloseDialog();
@@ -525,7 +439,6 @@ export default function BusStop() {
       await busStopApi.delete(selectedId);
       const updated = sortByIdDesc(stops.filter(s => s.id !== selectedId));
       setStops(updated);
-      setFilteredStops(updated);
       showSnackbar("Bus stop deleted successfully!", "success");
       setConfirmOpen(false);
       handleCloseDialog();
@@ -542,7 +455,6 @@ export default function BusStop() {
       const updatedStop = await busStopApi.markReached(stopId);
       const updated = sortByIdDesc(stops.map(s => s.id === stopId ? updatedStop : s));
       setStops(updated);
-      setFilteredStops(updated);
       showSnackbar("Stop marked as reached!", "success");
     } catch (error) {
       console.error("Error marking stop as reached:", error);
@@ -550,7 +462,6 @@ export default function BusStop() {
     }
   };
 
-  // ================= LOADING =================
   if (loading) {
     return (
       <PageContainer>
@@ -566,12 +477,11 @@ export default function BusStop() {
     );
   }
 
-  // ================= RENDER =================
   return (
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header with inline stats and smaller Add button */}
+          {/* Header */}
           <Box sx={{ 
             display: "flex", 
             flexDirection: { xs: "column", sm: "row" }, 
@@ -587,7 +497,6 @@ export default function BusStop() {
                   Bus Stops
                 </Typography>
               </Box>
-              {/* Inline stats */}
               <InlineStats>
                 <span className="stat-chip">Total <span className="num">{stops.length}</span></span>
                 <span className="stat-chip pending">Pending <span className="num">{stops.filter(s => !s.reached).length}</span></span>
@@ -599,13 +508,89 @@ export default function BusStop() {
             </AddButton>
           </Box>
 
-          {/* Table – with horizontal scroll */}
+          {/* ===== FILTER BAR ===== */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            alignItems: { xs: 'stretch', sm: 'center' }, 
+            gap: 2, 
+            mb: 2,
+            p: { xs: 1, sm: 1.5 },
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            flexWrap: 'wrap'
+          }}>
+            <TextField
+              placeholder="Search by stop name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              size="small"
+              sx={{
+                minWidth: { xs: '100%', sm: '200px' },
+                maxWidth: { xs: '100%', sm: '260px' },
+                flex: 1,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '10px',
+                  backgroundColor: 'white',
+                  '& fieldset': { borderColor: '#e2e8f0' },
+                  '&:hover fieldset': { borderColor: '#6495ED' },
+                  '&.Mui-focused fieldset': { borderColor: '#6495ED' }
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchQuery('')} sx={{ p: 0.5 }}>
+                      <ClearIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                label="Status"
+              >
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="reached">Reached</MenuItem>
+              </Select>
+            </FormControl>
+
+            {(searchQuery || statusFilter !== 'all') && (
+              <Button 
+                variant="text" 
+                onClick={clearFilters} 
+                size="small" 
+                sx={{ 
+                  color: '#64748b', 
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  '&:hover': { backgroundColor: 'transparent', color: '#1e293b' }
+                }}
+                startIcon={<ClearIcon sx={{ fontSize: 18 }} />}
+              >
+                Clear
+              </Button>
+            )}
+          </Box>
+
+          {/* Table/Cards */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
                 <Table stickyHeader sx={{ minWidth: 700 }}>
                   <GradientHeader>
-                    {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
                       <TableCell sx={{ minWidth: '200px' }}>Stop Name</TableCell>
@@ -613,27 +598,6 @@ export default function BusStop() {
                       <TableCell sx={{ minWidth: '120px' }}>Longitude</TableCell>
                       <TableCell sx={{ minWidth: '100px' }} align="center">Status</TableCell>
                       <TableCell sx={{ minWidth: '120px' }} align="center">Actions</TableCell>
-                    </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Name" value={filters.stopName} onChange={handleFilterChange('stopName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Lat" value={filters.latitude} onChange={handleFilterChange('latitude')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Lng" value={filters.longitude} onChange={handleFilterChange('longitude')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Status" value={filters.status} onChange={handleFilterChange('status')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        {/* Actions filter – empty */}
-                      </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
@@ -668,9 +632,9 @@ export default function BusStop() {
                         <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                           <PlaceIcon sx={{ fontSize: 40, opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
                           <Typography color="text.secondary">
-                            {Object.values(filters).some(f => f) ? "No stops match your filters" : "No bus stops added yet"}
+                            {stops.length === 0 ? 'No bus stops added yet' : 'No stops match your filters'}
                           </Typography>
-                          {!Object.values(filters).some(f => f) && (
+                          {stops.length === 0 && (
                             <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
                               Add your first stop
                             </Button>
@@ -682,23 +646,7 @@ export default function BusStop() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile/Tablet Card View with global search
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
                   {filteredStops.length > 0 ? (
                     filteredStops.map(s => (
@@ -727,9 +675,9 @@ export default function BusStop() {
                     <Box sx={{ textAlign: 'center', py: 4 }}>
                       <PlaceIcon sx={{ fontSize: 48, opacity: 0.2, mb: 2 }} />
                       <Typography color="text.secondary">
-                        {mobileSearchTerm ? `No stops found matching "${mobileSearchTerm}"` : "No bus stops added yet"}
+                        {stops.length === 0 ? 'No bus stops added yet' : 'No stops match your filters'}
                       </Typography>
-                      {!mobileSearchTerm && (
+                      {stops.length === 0 && (
                         <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
                           Add first stop
                         </Button>
@@ -743,7 +691,7 @@ export default function BusStop() {
         </ContentWrapper>
       </MainContent>
 
-      {/* ================= DIALOG WITH MAP ================= */}
+      {/* ================= DIALOG ================= */}
       <StyledDialog open={open} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
           <span>{isAddMode ? "Add Bus Stop" : "Bus Stop Details"}</span>

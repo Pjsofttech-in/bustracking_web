@@ -1,5 +1,5 @@
 // src/pages/AcademicYear/AcademicYear.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Button,
@@ -28,13 +28,16 @@ import {
   CardContent,
   Tooltip,
   TableContainer as MuiTableContainer,
-  InputAdornment
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import SearchIcon from "@mui/icons-material/Search";
 import { styled } from "@mui/material/styles";
 
 import academicYearApi from "../../api/academicYearApi";
@@ -80,7 +83,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
-// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 400px)",
   minHeight: "300px",
@@ -141,7 +143,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "16px", [theme.breakpoints.down('sm')]: { paddingRight: "10px" }, [theme.breakpoints.down('xs')]: { paddingRight: "8px" } }
 }));
 
-// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
   borderRadius: "10px",
   padding: "6px 16px",
@@ -159,7 +160,6 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
 }));
 
-// ---- Inline Stats (adjustable size) ----
 const InlineStats = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -188,54 +188,6 @@ const InlineStats = styled(Box)(({ theme }) => ({
       fontWeight: 600,
     }
   }
-}));
-
-// ---- Filter input (white background, tiny) ----
-const FilterInput = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#ffffff',
-    borderRadius: '4px',
-    color: '#1e293b',
-    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-    '&:hover fieldset': { borderColor: '#6495ED' },
-    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
-    '& input': {
-      padding: '2px 6px',
-      fontSize: '0.6rem',
-      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
-      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
-      '&::placeholder': {
-        color: 'rgba(0,0,0,0.4)',
-        opacity: 1
-      }
-    }
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: '2px',
-    '& svg': {
-      fontSize: '0.7rem',
-      color: '#94a3b8'
-    }
-  },
-  width: '100%',
-  minWidth: '40px',
-}));
-
-// ---- Mobile search field ----
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    '&:hover fieldset': { borderColor: "#6495ED" },
-    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
-    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
-  },
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -281,7 +233,6 @@ export default function AcademicYear() {
 
   const [open, setOpen] = useState(false);
   const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
   const [form, setForm] = useState({ yearName: "" });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -294,13 +245,8 @@ export default function AcademicYear() {
     severity: "success"
   });
 
-  // ---- Per‑column filters (desktop) ----
-  const [filters, setFilters] = useState({
-    id: "",
-    yearName: "",
-  });
-  // ---- Mobile global search ----
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
+  // ---- FILTER STATE (dropdown) ----
+  const [filterYear, setFilterYear] = useState("");
 
   // ================= SORTING HELPER (descending ID) =================
   const sortByIdDesc = (arr) => [...arr].sort((a, b) => b.id - a.id);
@@ -312,12 +258,10 @@ export default function AcademicYear() {
       const response = await academicYearApi.getAll();
       const sorted = sortByIdDesc(Array.isArray(response) ? response : []);
       setData(sorted);
-      setFilteredData(sorted);
     } catch (error) {
       console.error("Error fetching data:", error);
       showSnackbar("Failed to load academic years", "error");
       setData([]);
-      setFilteredData([]);
     } finally {
       setLoading(false);
     }
@@ -327,49 +271,25 @@ export default function AcademicYear() {
     loadData();
   }, []);
 
-  // ================= FILTERING LOGIC =================
-  useEffect(() => {
-    let filtered = data;
-
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    filtered = filtered.filter((item) =>
-      matches(item.id, filters.id) &&
-      matches(item.yearName, filters.yearName)
-    );
-
-    // Mobile global search
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter((item) =>
-        matches(item.id, term) ||
-        matches(item.yearName, term)
-      );
-    }
-
-    setFilteredData(filtered);
-  }, [data, filters, mobileSearchTerm, isMobile]);
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
+  // ================= DERIVED FILTER OPTIONS =================
+  const yearOptions = useMemo(() => {
+    const years = data.map(item => item.yearName).filter(Boolean);
+    return [...new Set(years)].sort(); // unique and sorted
+  }, [data]);
+
+  // ================= FILTERED DATA =================
+  const filteredData = useMemo(() => {
+    if (!filterYear) return data;
+    return data.filter((item) => item.yearName === filterYear);
+  }, [data, filterYear]);
+
   // ================= HANDLE CHANGE =================
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  // ================= FILTER HANDLERS =================
-  const handleFilterChange = (field) => (e) => {
-    setFilters((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
   };
 
   // ================= HANDLE SUBMIT (ADD) =================
@@ -391,7 +311,6 @@ export default function AcademicYear() {
       const newYear = await academicYearApi.create(yearData);
       const updated = sortByIdDesc([...data, newYear]);
       setData(updated);
-      setFilteredData(updated);
       showSnackbar("Academic Year Added Successfully", "success");
       setForm({ yearName: "" });
       setOpen(false);
@@ -416,7 +335,6 @@ export default function AcademicYear() {
       await academicYearApi.delete(selectedId);
       const updated = sortByIdDesc(data.filter((item) => item.id !== selectedId));
       setData(updated);
-      setFilteredData(updated);
       showSnackbar("Academic Year Deleted Successfully", "success");
       setDeleteDialogOpen(false);
       setSelectedId(null);
@@ -458,14 +376,14 @@ export default function AcademicYear() {
     );
   }
 
-  const latestYear = data.length > 0 ? data[0].yearName : "None"; // after sorting descending, first is latest
+  const latestYear = data.length > 0 ? data[0].yearName : "None";
 
   // ================= RENDER =================
   return (
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header with inline stats and smaller Add button */}
+          {/* Header with inline stats, filter dropdown, and Add button */}
           <Box sx={{ 
             display: "flex", 
             flexDirection: { xs: "column", sm: "row" }, 
@@ -474,22 +392,46 @@ export default function AcademicYear() {
             gap: { xs: 1, sm: 2 }, 
             mb: { xs: 2, sm: 2 } 
           }}>
-            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: { xs: 1, sm: 2 } }}>
+            <Box sx={{ 
+              display: "flex", 
+              flexDirection: { xs: "column", sm: "row" }, 
+              alignItems: { xs: "stretch", sm: "center" }, 
+              flexWrap: "wrap", 
+              gap: { xs: 1, sm: 2 },
+              flex: 1
+            }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <CalendarTodayIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
                 <Typography variant="h6" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1rem", sm: "1.2rem", md: "1.4rem" }, color: "#1e293b" }}>
                   Academic Years
                 </Typography>
               </Box>
-              {/* Inline stats */}
               <InlineStats>
                 <span className="stat-chip">Total <span className="num">{data.length}</span></span>
                 <span className="stat-chip">Latest <span className="latest">{latestYear}</span></span>
               </InlineStats>
             </Box>
-            <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={() => setOpen(true)}>
-              Add Year
-            </AddButton>
+
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+              {/* Filter Dropdown */}
+              <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '150px' } }}>
+                <InputLabel>Filter by Year</InputLabel>
+                <Select
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  label="Filter by Year"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  {yearOptions.map((year) => (
+                    <MenuItem key={year} value={year}>{year}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={() => setOpen(true)}>
+                Add Year
+              </AddButton>
+            </Box>
           </Box>
 
           {/* Table/List View */}
@@ -498,23 +440,10 @@ export default function AcademicYear() {
               <StyledTableContainer>
                 <Table stickyHeader sx={{ minWidth: 600 }}>
                   <GradientHeader>
-                    {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
                       <TableCell sx={{ minWidth: '200px' }}>Academic Year</TableCell>
                       <TableCell sx={{ minWidth: '100px' }} align="center">Actions</TableCell>
-                    </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter ID" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Year" value={filters.yearName} onChange={handleFilterChange('yearName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        {/* Actions – empty */}
-                      </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
@@ -544,9 +473,9 @@ export default function AcademicYear() {
                         <TableCell colSpan={3} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
                           <Typography variant="body1" color="text.secondary">
                             <CalendarTodayIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            {Object.values(filters).some(f => f) ? "No academic years match your filters" : "No academic years added yet"}
+                            {data.length === 0 ? "No academic years added yet" : "No years match the selected filter"}
                           </Typography>
-                          {!Object.values(filters).some(f => f) && (
+                          {data.length === 0 && (
                             <Button
                               variant="outlined"
                               startIcon={<AddIcon />}
@@ -563,23 +492,7 @@ export default function AcademicYear() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile/Tablet Card View with global search
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
                   {filteredData.length > 0 ? (
                     filteredData.map((row, index) => (
@@ -616,9 +529,9 @@ export default function AcademicYear() {
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <CalendarTodayIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
                       <Typography variant="body1" color="text.secondary">
-                        {mobileSearchTerm ? `No academic years found matching "${mobileSearchTerm}"` : "No academic years added yet"}
+                        {data.length === 0 ? "No academic years added yet" : "No years match the selected filter"}
                       </Typography>
-                      {!mobileSearchTerm && (
+                      {data.length === 0 && (
                         <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpen(true)} sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                           Add first year
                         </Button>
@@ -632,7 +545,7 @@ export default function AcademicYear() {
         </ContentWrapper>
       </MainContent>
 
-      {/* Add Academic Year Dialog */}
+      {/* Add Academic Year Dialog (unchanged) */}
       <StyledDialog open={open} onClose={handleCloseDialog} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 700, fontSize: { xs: "0.95rem", sm: "1.1rem", md: "1.25rem" }, color: "#1e293b", display: "flex", justifyContent: "space-between", alignItems: "center", pr: 0.5, p: { xs: 1.5, sm: 2, md: 2.5 } }}>
           Add New Academic Year
@@ -680,7 +593,7 @@ export default function AcademicYear() {
         </DialogActions>
       </StyledDialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog (unchanged) */}
       <StyledDialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 700, color: "#dc2626", fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" }, p: { xs: 1.5, sm: 2, md: 2.5 } }}>
           Confirm Delete
@@ -698,7 +611,7 @@ export default function AcademicYear() {
         </DialogActions>
       </StyledDialog>
 
-      {/* Snackbar */}
+      {/* Snackbar (unchanged) */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

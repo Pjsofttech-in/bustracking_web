@@ -1,4 +1,4 @@
-// src/pages/ServiceProvider.jsx
+// src/pages/ServiceProvider/Serviceprovider.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -21,7 +21,7 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
-  useTheme,
+  useTheme as useMuiTheme,
   useMediaQuery,
   Card,
   CardContent,
@@ -30,8 +30,13 @@ import {
   Grow,
   Tooltip,
   InputAdornment,
-  TableContainer as MuiTableContainer
+  TableContainer as MuiTableContainer,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select
 } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
@@ -41,7 +46,8 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import SearchIcon from "@mui/icons-material/Search";
-import { styled } from "@mui/material/styles";
+import ClearIcon from "@mui/icons-material/Clear";
+import BadgeIcon from "@mui/icons-material/Badge";
 import serviceProviderApi from "../../api/serviceProviderApi";
 
 // ================= STYLED COMPONENTS =================
@@ -162,52 +168,68 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "6px 10px", fontSize: "0.75rem", borderRadius: "8px" }
 }));
 
-// --- UPDATED: Filter input with white background and dark text ---
-const FilterInput = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#ffffff', // white background
-    borderRadius: '6px',
-    color: '#1e293b', // dark text
-    '& fieldset': { borderColor: 'rgba(0,0,0,0.23)' }, // default border
-    '&:hover fieldset': { borderColor: '#6495ED' },
-    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
-    '& input': {
-      padding: '4px 8px',
-      fontSize: '0.7rem',
-      [theme.breakpoints.down('md')]: { fontSize: '0.6rem', padding: '3px 6px' },
-      [theme.breakpoints.down('sm')]: { fontSize: '0.55rem', padding: '2px 5px' },
-      '&::placeholder': {
-        color: 'rgba(0,0,0,0.6)',
-        opacity: 1
-      }
-    }
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: '2px',
-    '& svg': {
-      fontSize: '0.9rem',
-      color: '#64748b' // dark icon
-    }
-  },
-  width: '100%',
-  minWidth: '50px',
+// ----- InlineStats (compact stat chips) -----
+const InlineStats = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  flexWrap: "wrap",
+  marginBottom: theme.spacing(2),
+  [theme.breakpoints.down('sm')]: { gap: theme.spacing(1) },
+  '& .stat-chip': {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    backgroundColor: "#f1f5f9",
+    borderRadius: "20px",
+    padding: "4px 14px",
+    fontSize: "0.8rem",
+    fontWeight: 500,
+    color: "#1e293b",
+    [theme.breakpoints.down('sm')]: { fontSize: "0.7rem", padding: "2px 10px" },
+    [theme.breakpoints.down('xs')]: { fontSize: "0.65rem", padding: "2px 8px" },
+    '& .num': {
+      fontWeight: 700,
+      color: "#6495ED",
+      marginLeft: "2px",
+    },
+    '&.active .num': { color: "#22c55e" },
+    '&.inactive .num': { color: "#dc2626" },
+  }
 }));
 
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    '&:hover fieldset': { borderColor: "#6495ED" },
-    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
-    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
-  },
-}));
+// ----- FilterField – reusable search input -----
+const FilterField = ({ sx, ...props }) => {
+  const theme = useMuiTheme();
+  return (
+    <TextField
+      {...props}
+      size="small"
+      sx={{
+        '& .MuiOutlinedInput-root': {
+          backgroundColor: '#ffffff',
+          borderRadius: '8px',
+          '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
+          '&:hover fieldset': { borderColor: '#6495ED' },
+          '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
+          '& input': {
+            padding: '8px 12px',
+            fontSize: '0.8rem',
+            [theme.breakpoints.down('md')]: { fontSize: '0.75rem', padding: '6px 10px' },
+            [theme.breakpoints.down('sm')]: { fontSize: '0.7rem', padding: '5px 8px' },
+          }
+        },
+        '& .MuiInputLabel-root': {
+          fontSize: '0.8rem',
+          [theme.breakpoints.down('sm')]: { fontSize: '0.7rem' }
+        },
+        width: '100%',
+        minWidth: '120px',
+        ...sx,
+      }}
+    />
+  );
+};
 
 const MobileCard = styled(Card)(({ theme }) => ({
   borderRadius: "12px",
@@ -246,7 +268,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 
 // ================= MAIN COMPONENT =================
 export default function ServiceProviderPage() {
-  const theme = useTheme();
+  const theme = useMuiTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isExtraSmall = useMediaQuery('(max-width: 380px)');
@@ -255,35 +277,28 @@ export default function ServiceProviderPage() {
     serviceprovidername: "",
     email: "",
     mobile: "",
-    city: "",
-    state: "",
-    pincode: "",
+    registrationNumber: "",
+    address: "",
+    status: "ACTIVE",
   };
 
   const labelMap = {
     serviceprovidername: "Company Name",
     email: "Email",
     mobile: "Mobile",
-    city: "City",
-    state: "State",
-    pincode: "Pin Code",
+    registrationNumber: "Registration Number",
+    address: "Address",
+    status: "Status",
   };
 
   const [providers, setProviders] = useState([]);
   const [filteredProviders, setFilteredProviders] = useState([]);
-  
-  // --- NEW: per‑column filter state ---
-  const [filters, setFilters] = useState({
-    id: "",
-    serviceprovidername: "",
-    email: "",
-    mobile: "",
-    city: "",
-    state: "",
-    pincode: "",
-  });
-  // --- Mobile global search (kept for smaller screens) ---
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
+
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [registrationFilter, setRegistrationFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -299,10 +314,7 @@ export default function ServiceProviderPage() {
     severity: "success"
   });
 
-  // ------------- SORTING HELPER -------------
-  const sortByIdDesc = (data) => {
-    return [...data].sort((a, b) => b.id - a.id);
-  };
+  const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
 
   const loadProviders = async () => {
     setLoading(true);
@@ -325,56 +337,40 @@ export default function ServiceProviderPage() {
     loadProviders();
   }, []);
 
-  // ------------- FILTERING LOGIC (per‑column) -------------
   useEffect(() => {
-    // First apply per‑column filters
     let filtered = providers;
 
-    // Helper: check if a value matches a filter string (case‑insensitive)
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    filtered = filtered.filter(p =>
-      matches(p.id, filters.id) &&
-      matches(p.serviceprovidername, filters.serviceprovidername) &&
-      matches(p.email, filters.email) &&
-      matches(p.mobile, filters.mobile) &&
-      matches(p.city, filters.city) &&
-      matches(p.state, filters.state) &&
-      matches(p.pincode, filters.pincode)
-    );
-
-    // For mobile, if there's a global search term, apply additional filtering
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(p =>
-        matches(p.serviceprovidername, term) ||
-        matches(p.email, term) ||
-        matches(p.mobile, term) ||
-        matches(p.city, term) ||
-        matches(p.state, term) ||
-        matches(p.pincode, term) ||
-        matches(p.id, term)
+        p.serviceprovidername?.toLowerCase().includes(term) ||
+        p.email?.toLowerCase().includes(term) ||
+        p.mobile?.toLowerCase().includes(term) ||
+        p.registrationNumber?.toLowerCase().includes(term) ||
+        p.address?.toLowerCase().includes(term) ||
+        p.status?.toLowerCase().includes(term)
       );
     }
 
+    if (companyFilter.trim()) {
+      const term = companyFilter.toLowerCase().trim();
+      filtered = filtered.filter(p => p.serviceprovidername?.toLowerCase().includes(term));
+    }
+
+    if (registrationFilter.trim()) {
+      const term = registrationFilter.toLowerCase().trim();
+      filtered = filtered.filter(p => p.registrationNumber?.toLowerCase().includes(term));
+    }
+
+    if (statusFilter) {
+      filtered = filtered.filter(p => p.status === statusFilter);
+    }
+
     setFilteredProviders(filtered);
-  }, [providers, filters, mobileSearchTerm, isMobile]);
+  }, [providers, searchTerm, companyFilter, registrationFilter, statusFilter]);
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
-  };
-
-  // ------------- HANDLERS -------------
-  const handleFilterChange = (field) => (e) => {
-    setFilters(prev => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
   };
 
   const handleChange = (e) => {
@@ -395,9 +391,9 @@ export default function ServiceProviderPage() {
       serviceprovidername: provider.serviceprovidername || "",
       email: provider.email || "",
       mobile: provider.mobile || "",
-      city: provider.city || "",
-      state: provider.state || "",
-      pincode: provider.pincode || "",
+      registrationNumber: provider.registrationNumber || "",
+      address: provider.address || "",
+      status: provider.status || "ACTIVE",
     });
     setIsAddMode(false);
     setEditMode(false);
@@ -436,22 +432,20 @@ export default function ServiceProviderPage() {
         serviceprovidername: form.serviceprovidername.trim(),
         email: form.email?.trim() || "",
         mobile: cleanMobile,
-        city: form.city?.trim() || "",
-        state: form.state?.trim() || "",
-        pincode: form.pincode?.trim() || "",
+        registrationNumber: form.registrationNumber?.trim() || "",
+        address: form.address?.trim() || "",
+        status: form.status || "ACTIVE",
       };
 
       if (isAddMode) {
         const newProvider = await serviceProviderApi.create(payload);
         const updatedProviders = sortByIdDesc([...providers, newProvider]);
         setProviders(updatedProviders);
-        setFilteredProviders(updatedProviders);
         showSnackbar("Service Provider Added Successfully!", "success");
       } else {
         const updated = await serviceProviderApi.update(selectedId, payload);
         const updatedProviders = sortByIdDesc(providers.map(p => p.id === selectedId ? updated : p));
         setProviders(updatedProviders);
-        setFilteredProviders(updatedProviders);
         showSnackbar("Service Provider Updated Successfully!", "success");
       }
       handleCloseDialog();
@@ -474,7 +468,6 @@ export default function ServiceProviderPage() {
       await serviceProviderApi.delete(selectedId);
       const updatedProviders = sortByIdDesc(providers.filter(p => p.id !== selectedId));
       setProviders(updatedProviders);
-      setFilteredProviders(updatedProviders);
       showSnackbar("Service Provider Deleted Successfully!", "success");
       setConfirmOpen(false);
       handleCloseDialog();
@@ -486,14 +479,29 @@ export default function ServiceProviderPage() {
     }
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setCompanyFilter("");
+    setRegistrationFilter("");
+    setStatusFilter("");
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'ACTIVE': return { bg: '#dcfce7', color: '#16a34a' };
+      case 'INACTIVE': return { bg: '#fee2e2', color: '#dc2626' };
+      default: return { bg: '#f1f5f9', color: '#64748b' };
+    }
+  };
+
   const getIconForField = (key) => {
     switch(key) {
       case 'serviceprovidername': return <BusinessIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
       case 'email': return <EmailIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
       case 'mobile': return <PhoneIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
-      case 'city':
-      case 'state':
-      case 'pincode': return <LocationOnIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
+      case 'registrationNumber': return <BusinessIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
+      case 'address': return <LocationOnIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
+      case 'status': return <BusinessIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />;
       default: return null;
     }
   };
@@ -506,238 +514,174 @@ export default function ServiceProviderPage() {
     );
   }
 
+  // ================= RENDER =================
   return (
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header with Add button (no search bar) */}
-          <Box sx={{ 
+          {/* ----- INLINE STATS (above filter bar) ----- */}
+          <InlineStats>
+            <span className="stat-chip">Total <span className="num">{providers.length}</span></span>
+            <span className="stat-chip active">Active <span className="num">{providers.filter(p => p.status === 'ACTIVE').length}</span></span>
+            <span className="stat-chip inactive">Inactive <span className="num">{providers.filter(p => p.status === 'INACTIVE').length}</span></span>
+          </InlineStats>
+
+          {/* ----- FILTER BAR ----- */}
+          <Box sx={{
             display: "flex",
+            flexWrap: "wrap",
             alignItems: "center",
-            justifyContent: "space-between",
-            mb: 1.5,
-            gap: 1,
-            flexWrap: "wrap"
+            gap: 1.5,
+            mb: 2,
+            p: { xs: 1, sm: 1.5 },
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
           }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <BusinessIcon sx={{ color: "#6495ED", fontSize: { xs: 18, sm: 22, md: 26 } }} />
-              <Typography 
-                variant="h6" 
-                component="h1"
-                sx={{ 
-                  fontWeight: 700,
-                  fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" },
-                  color: "#1e293b",
-                  lineHeight: 1.2,
-                }}
+            <FilterField
+              placeholder="Search all fields..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8', fontSize: '0.9rem' }} /></InputAdornment>,
+                endAdornment: searchTerm && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchTerm("")}>
+                      <CloseIcon sx={{ fontSize: '0.8rem' }} />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+              sx={{ flex: { xs: "1 1 100%", sm: "1 1 150px" }, minWidth: 120 }}
+            />
+
+            <FilterField
+              placeholder="Company Name"
+              value={companyFilter}
+              onChange={(e) => setCompanyFilter(e.target.value)}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><BusinessIcon sx={{ color: '#94a3b8', fontSize: '0.9rem' }} /></InputAdornment>,
+                endAdornment: companyFilter && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setCompanyFilter("")}>
+                      <CloseIcon sx={{ fontSize: '0.8rem' }} />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+              sx={{ flex: { xs: "1 1 100%", sm: "1 1 130px" }, minWidth: 120 }}
+            />
+
+            <FilterField
+              placeholder="Registration #"
+              value={registrationFilter}
+              onChange={(e) => setRegistrationFilter(e.target.value)}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><BadgeIcon sx={{ color: '#94a3b8', fontSize: '0.9rem' }} /></InputAdornment>,
+                endAdornment: registrationFilter && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setRegistrationFilter("")}>
+                      <CloseIcon sx={{ fontSize: '0.8rem' }} />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+              sx={{ flex: { xs: "1 1 100%", sm: "1 1 130px" }, minWidth: 120 }}
+            />
+
+            <FormControl size="small" sx={{ minWidth: 110, flex: { xs: "1 1 100%", sm: "0 1 auto" } }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                label="Status"
               >
-                Service Providers
-              </Typography>
-            </Box>
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="ACTIVE">Active</MenuItem>
+                <MenuItem value="INACTIVE">Inactive</MenuItem>
+              </Select>
+            </FormControl>
+
+            {(searchTerm || companyFilter || registrationFilter || statusFilter) && (
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<ClearIcon />}
+                onClick={handleClearFilters}
+                sx={{ color: '#64748b', textTransform: 'none', fontWeight: 500, flexShrink: 0 }}
+              >
+                Clear
+              </Button>
+            )}
+
             <AddButton
               variant="contained"
               startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 } }} />}
               onClick={handleAddOpen}
+              sx={{ ml: { sm: 'auto' }, flexShrink: 0 }}
             >
               Add Provider
             </AddButton>
           </Box>
 
-          {/* Table/List View */}
+          {/* ----- TABLE / CARDS ----- */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
                 <Table stickyHeader size={isExtraSmall ? "small" : "medium"}>
                   <GradientHeader>
-                    {/* Header row with column labels */}
                     <TableRow>
-                      <TableCell>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          ID
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Company Name
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Email
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Mobile
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          City
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          State
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.7rem" } }}>
-                          Pin Code
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                        <FilterInput
-                          size="small"
-                          placeholder="Filter ID"
-                          value={filters.id}
-                          onChange={handleFilterChange('id')}
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                        <FilterInput
-                          size="small"
-                          placeholder="Filter Name"
-                          value={filters.serviceprovidername}
-                          onChange={handleFilterChange('serviceprovidername')}
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                        <FilterInput
-                          size="small"
-                          placeholder="Filter Email"
-                          value={filters.email}
-                          onChange={handleFilterChange('email')}
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                        <FilterInput
-                          size="small"
-                          placeholder="Filter Mobile"
-                          value={filters.mobile}
-                          onChange={handleFilterChange('mobile')}
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                        <FilterInput
-                          size="small"
-                          placeholder="Filter City"
-                          value={filters.city}
-                          onChange={handleFilterChange('city')}
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                        <FilterInput
-                          size="small"
-                          placeholder="Filter State"
-                          value={filters.state}
-                          onChange={handleFilterChange('state')}
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ padding: '4px 6px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                        <FilterInput
-                          size="small"
-                          placeholder="Filter Pin"
-                          value={filters.pincode}
-                          onChange={handleFilterChange('pincode')}
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} /></InputAdornment>,
-                          }}
-                        />
-                      </TableCell>
+                      <TableCell>ID</TableCell>
+                      <TableCell>Company Name</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Mobile</TableCell>
+                      <TableCell>Registration #</TableCell>
+                      <TableCell>Address</TableCell>
+                      <TableCell align="center">Status</TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
                     {filteredProviders.length > 0 ? (
                       filteredProviders.map((p) => (
                         <StyledTableRow key={p.id} onClick={() => handleRowClick(p)}>
+                          <TableCell>{p.id}</TableCell>
                           <TableCell>
-                            <Typography sx={{ fontWeight: 500, fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' } }}>
-                              {p.id}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-                              <BusinessIcon sx={{ fontSize: { xs: 14, sm: 16, md: 18 }, color: "#6495ED" }} />
-                              <Typography sx={{ fontWeight: 500, fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' }, wordBreak: 'break-word' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <BusinessIcon sx={{ fontSize: 16, color: "#6495ED" }} />
+                              <Typography sx={{ fontWeight: 500, fontSize: '0.85rem', wordBreak: 'break-word' }}>
                                 {p.serviceprovidername || '-'}
                               </Typography>
                             </Box>
                           </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ color: "#6495ED", fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' }, wordBreak: 'break-word' }}>
-                              {p.email || "—"}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={p.mobile}
+                          <TableCell sx={{ color: "#6495ED", wordBreak: 'break-word' }}>{p.email || "—"}</TableCell>
+                          <TableCell><Chip label={p.mobile} size="small" sx={{ backgroundColor: "#f1f5f9", fontWeight: 500 }} /></TableCell>
+                          <TableCell>{p.registrationNumber || '-'}</TableCell>
+                          <TableCell sx={{ maxWidth: 150, wordBreak: 'break-word' }}>{p.address || '-'}</TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={p.status || 'ACTIVE'}
                               size="small"
                               sx={{
-                                backgroundColor: "#f1f5f9",
-                                color: "#1e293b",
-                                fontWeight: 500,
-                                fontSize: { xs: "0.5rem", sm: "0.6rem", md: "0.75rem" },
-                                borderRadius: "6px",
-                                height: { xs: "20px", sm: "22px", md: "24px" }
+                                bgcolor: getStatusColor(p.status).bg,
+                                color: getStatusColor(p.status).color,
+                                fontWeight: 600,
+                                minWidth: 70
                               }}
                             />
-                          </TableCell>
-                          <TableCell sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' } }}>
-                            {p.city}
-                          </TableCell>
-                          <TableCell sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' } }}>
-                            {p.state}
-                          </TableCell>
-                          <TableCell sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' } }}>
-                            {p.pincode}
                           </TableCell>
                         </StyledTableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
-                          <Typography variant="body1" color="text.secondary">
-                            <BusinessIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            {Object.values(filters).some(f => f) 
-                              ? "No providers match your filters" 
+                        <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                          <BusinessIcon sx={{ fontSize: 40, opacity: 0.3, display: "block", margin: "0 auto 8px" }} />
+                          <Typography color="text.secondary">
+                            {searchTerm || companyFilter || registrationFilter || statusFilter
+                              ? "No providers match your filters"
                               : "No service providers added yet"}
                           </Typography>
-                          {!Object.values(filters).some(f => f) && (
-                            <Button
-                              variant="outlined"
-                              startIcon={<AddIcon />}
-                              onClick={handleAddOpen}
-                              sx={{ 
-                                mt: 2,
-                                borderRadius: "10px",
-                                textTransform: "none",
-                                borderColor: "#6495ED",
-                                color: "#6495ED",
-                                fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                              }}
-                            >
+                          {!(searchTerm || companyFilter || registrationFilter || statusFilter) && (
+                            <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2, borderRadius: "10px", textTransform: "none", borderColor: "#6495ED", color: "#6495ED" }}>
                               Add your first provider
                             </Button>
                           )}
@@ -748,150 +692,67 @@ export default function ServiceProviderPage() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile/Tablet Card View – retains a global search input
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
                   {filteredProviders.length > 0 ? (
                     filteredProviders.map((p, index) => (
                       <Grow in key={p.id} timeout={300 * (index + 1) * 0.1}>
                         <MobileCard onClick={() => handleRowClick(p)}>
-                          <CardContent sx={{ 
-                            p: { xs: 1.5, sm: 2, md: 2.5 },
-                            '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5 } }
-                          }}>
-                            <Box sx={{ 
-                              display: "flex", 
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                              flexWrap: "wrap",
-                              gap: 0.5
-                            }}>
+                          <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 }, '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5 } } }}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 0.5 }}>
                               <Box sx={{ flex: 1, minWidth: 0 }}>
-                                <Typography 
-                                  variant="h6" 
-                                  sx={{ 
-                                    fontWeight: 600,
-                                    fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" },
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                    wordBreak: 'break-word'
-                                  }}
-                                >
-                                  <BusinessIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 }, color: "#6495ED" }} />
+                                <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" }, display: 'flex', alignItems: 'center', gap: 0.5, wordBreak: 'break-word' }}>
+                                  <BusinessIcon sx={{ fontSize: 16, color: "#6495ED" }} />
                                   {p.serviceprovidername || '-'}
                                 </Typography>
                               </Box>
-                              <Chip 
-                                label={`ID: ${p.id}`}
-                                size="small"
-                                sx={{ 
-                                  backgroundColor: "#e2e8f0", 
-                                  color: "#1e293b",
-                                  fontWeight: 500,
-                                  fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' },
-                                  height: { xs: '20px', sm: '22px', md: '24px' },
-                                  borderRadius: "6px"
-                                }}
-                              />
+                              <Chip label={`ID: ${p.id}`} size="small" sx={{ backgroundColor: "#e2e8f0", fontWeight: 500 }} />
                             </Box>
-
-                            <Box sx={{ 
-                              display: "grid",
-                              gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 1fr 1fr" },
-                              gap: { xs: 1, sm: 1.5 },
-                              mt: 1.5,
-                              pt: 1.5,
-                              borderTop: "1px solid #f1f5f9"
-                            }}>
+                            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 1fr 1fr" }, gap: 1, mt: 1.5, pt: 1.5, borderTop: "1px solid #f1f5f9" }}>
                               <Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                  Email
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" }, display: 'flex', alignItems: 'center', gap: 0.5, color: "#6495ED", wordBreak: 'break-word' }}>
-                                  <EmailIcon sx={{ fontSize: { xs: 12, sm: 14 }, color: "#64748b" }} />
+                                <Typography variant="caption" color="text.secondary">Email</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.5, color: "#6495ED", wordBreak: 'break-word' }}>
+                                  <EmailIcon sx={{ fontSize: 14, color: "#64748b" }} />
                                   {p.email || "—"}
                                 </Typography>
                               </Box>
                               <Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                  Mobile
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" }, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <PhoneIcon sx={{ fontSize: { xs: 12, sm: 14 }, color: "#64748b" }} />
+                                <Typography variant="caption" color="text.secondary">Mobile</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <PhoneIcon sx={{ fontSize: 14, color: "#64748b" }} />
                                   {p.mobile}
                                 </Typography>
                               </Box>
                               <Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                  City
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" }, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <LocationOnIcon sx={{ fontSize: { xs: 12, sm: 14 }, color: "#64748b" }} />
-                                  {p.city}
-                                </Typography>
+                                <Typography variant="caption" color="text.secondary">Registration #</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>{p.registrationNumber || '-'}</Typography>
+                              </Box>
+                              <Box sx={{ gridColumn: { xs: "1/3", sm: "auto" } }}>
+                                <Typography variant="caption" color="text.secondary">Address</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500, wordBreak: 'break-word' }}>{p.address || '-'}</Typography>
                               </Box>
                               <Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                  State
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" } }}>
-                                  {p.state}
-                                </Typography>
-                              </Box>
-                              <Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                  Pin Code
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" } }}>
-                                  {p.pincode}
-                                </Typography>
+                                <Typography variant="caption" color="text.secondary">Status</Typography>
+                                <Chip label={p.status || 'ACTIVE'} size="small" sx={{ bgcolor: getStatusColor(p.status).bg, color: getStatusColor(p.status).color, fontWeight: 600 }} />
                               </Box>
                             </Box>
-
-                            <Box sx={{ 
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              mt: 1,
-                              pt: 1,
-                              borderTop: "1px solid #f1f5f9"
-                            }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>
-                                Click to view details
-                              </Typography>
+                            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1, pt: 1, borderTop: "1px solid #f1f5f9" }}>
+                              <Typography variant="caption" color="text.secondary">Click to view details</Typography>
                             </Box>
                           </CardContent>
                         </MobileCard>
                       </Grow>
                     ))
                   ) : (
-                    <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
-                      <BusinessIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
-                      <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                        {mobileSearchTerm ? `No providers found matching "${mobileSearchTerm}"` : "No service providers added yet"}
+                    <Box sx={{ textAlign: "center", py: 4 }}>
+                      <BusinessIcon sx={{ fontSize: 48, opacity: 0.2, mb: 2 }} />
+                      <Typography color="text.secondary">
+                        {searchTerm || companyFilter || registrationFilter || statusFilter
+                          ? "No providers match your filters"
+                          : "No service providers added yet"}
                       </Typography>
-                      {!mobileSearchTerm && (
-                        <Button
-                          variant="outlined"
-                          startIcon={<AddIcon />}
-                          onClick={handleAddOpen}
-                          sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                        >
+                      {!(searchTerm || companyFilter || registrationFilter || statusFilter) && (
+                        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
                           Add first provider
                         </Button>
                       )}
@@ -904,25 +765,9 @@ export default function ServiceProviderPage() {
         </ContentWrapper>
       </MainContent>
 
-      {/* ================= DIALOG (Add/Edit/View) ================= */}
-      <StyledDialog 
-        open={open} 
-        onClose={handleCloseDialog} 
-        maxWidth="sm" 
-        fullWidth
-      >
-        <DialogTitle sx={{ 
-          fontWeight: 700,
-          fontSize: { xs: "0.95rem", sm: "1.1rem", md: "1.25rem" },
-          color: "#1e293b",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 0.5,
-          pr: 0.5,
-          p: { xs: 1.5, sm: 2, md: 2.5 }
-        }}>
+      {/* ----- DIALOGS (unchanged) ----- */}
+      <StyledDialog open={open} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 0.5, pr: 0.5, p: { xs: 1.5, sm: 2, md: 2.5 } }}>
           <span>{isAddMode ? "Add Service Provider" : "Provider Details"}</span>
           <Box sx={{ display: 'flex', gap: 0.5 }}>
             {!isAddMode && (
@@ -947,190 +792,81 @@ export default function ServiceProviderPage() {
 
         <DialogContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
           <Grid container spacing={isExtraSmall ? 1 : isMobile ? 1.5 : 2} sx={{ mt: 0 }}>
-            {/* ID field - read-only, shown only when not in add mode */}
             {!isAddMode && (
               <Grid item xs={12}>
-                <StyledTextField
-                  fullWidth
-                  label="ID"
-                  value={selectedId || ''}
-                  disabled
-                  size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <BusinessIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />
-                      </InputAdornment>
-                    )
-                  }}
-                />
+                <StyledTextField fullWidth label="ID" value={selectedId || ''} disabled size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} InputProps={{ startAdornment: <InputAdornment position="start"><BusinessIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} /></InputAdornment> }} />
               </Grid>
             )}
-            {Object.keys(emptyForm).map((key) => (
-              <Grid item xs={12} md={6} key={key}>
-                <StyledTextField
-                  fullWidth
-                  label={labelMap[key]}
-                  name={key}
-                  value={form[key] || ""}
-                  onChange={handleChange}
-                  disabled={!editMode || submitting}
-                  required={key === 'serviceprovidername' || key === 'mobile'}
-                  placeholder={key === 'mobile' ? "Enter 10-digit mobile number" : key === 'email' ? "provider@example.com" : ""}
-                  size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        {getIconForField(key)}
-                      </InputAdornment>
-                    )
-                  }}
-                />
-              </Grid>
-            ))}
+            {Object.keys(emptyForm).map((key) => {
+              if (key === 'status') {
+                return (
+                  <Grid item xs={12} md={6} key={key}>
+                    <FormControl fullWidth disabled={!editMode || submitting} size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}>
+                      <InputLabel>Status</InputLabel>
+                      <Select name="status" value={form.status || "ACTIVE"} onChange={handleChange} label="Status">
+                        <MenuItem value="ACTIVE">Active</MenuItem>
+                        <MenuItem value="INACTIVE">Inactive</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                );
+              }
+              return (
+                <Grid item xs={12} md={key === 'address' ? 12 : 6} key={key}>
+                  <StyledTextField
+                    fullWidth
+                    label={labelMap[key]}
+                    name={key}
+                    value={form[key] || ""}
+                    onChange={handleChange}
+                    disabled={!editMode || submitting}
+                    required={key === 'serviceprovidername' || key === 'mobile'}
+                    placeholder={key === 'mobile' ? "Enter 10-digit mobile number" : key === 'email' ? "provider@example.com" : ""}
+                    size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          {getIconForField(key)}
+                        </InputAdornment>
+                      )
+                    }}
+                    multiline={key === 'address'}
+                    rows={key === 'address' ? 2 : 1}
+                  />
+                </Grid>
+              );
+            })}
           </Grid>
         </DialogContent>
 
-        <DialogActions sx={{ 
-          p: { xs: 1.5, sm: 2, md: 2.5 }, 
-          pt: { xs: 0.5, sm: 0.75, md: 1 }, 
-          gap: 0.5, 
-          flexWrap: 'wrap',
-          flexDirection: { xs: 'column', sm: 'row' }
-        }}>
+        <DialogActions sx={{ p: { xs: 1.5, sm: 2, md: 2.5 }, pt: { xs: 0.5, sm: 0.75, md: 1 }, gap: 0.5, flexWrap: 'wrap', flexDirection: { xs: 'column', sm: 'row' } }}>
           {editMode && (
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              disabled={submitting}
-              fullWidth={isExtraSmall}
-              sx={{
-                textTransform: "none",
-                borderRadius: "10px",
-                backgroundColor: "#6495ED",
-                fontWeight: 600,
-                px: { xs: 2, sm: 3 },
-                fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                flex: { xs: 1, sm: 0 },
-                order: { xs: 1, sm: 1 },
-                '&:hover': {
-                  backgroundColor: "#4169E1"
-                }
-              }}
-            >
+            <Button variant="contained" onClick={handleSubmit} disabled={submitting} fullWidth={isExtraSmall} sx={{ textTransform: "none", borderRadius: "10px", backgroundColor: "#6495ED", fontWeight: 600, px: { xs: 2, sm: 3 }, fontSize: { xs: '0.8rem', sm: '0.875rem' }, flex: { xs: 1, sm: 0 }, order: { xs: 1, sm: 1 }, '&:hover': { backgroundColor: "#4169E1" } }}>
               {submitting ? <CircularProgress size={isExtraSmall ? 20 : 24} color="inherit" /> : (isAddMode ? "Add" : "Save")}
             </Button>
           )}
-          <Button 
-            onClick={handleCloseDialog}
-            disabled={submitting}
-            fullWidth={isExtraSmall}
-            sx={{
-              textTransform: "none",
-              borderRadius: "10px",
-              color: "#64748b",
-              fontSize: { xs: '0.8rem', sm: '0.875rem' },
-              '&:hover': {
-                backgroundColor: "#f1f5f9"
-              },
-              flex: { xs: 1, sm: 0 },
-              order: { xs: editMode ? 2 : 1, sm: 2 }
-            }}
-          >
+          <Button onClick={handleCloseDialog} disabled={submitting} fullWidth={isExtraSmall} sx={{ textTransform: "none", borderRadius: "10px", color: "#64748b", fontSize: { xs: '0.8rem', sm: '0.875rem' }, '&:hover': { backgroundColor: "#f1f5f9" }, flex: { xs: 1, sm: 0 }, order: { xs: editMode ? 2 : 1, sm: 2 } }}>
             Close
           </Button>
         </DialogActions>
       </StyledDialog>
 
-      {/* ================= DELETE CONFIRMATION ================= */}
-      <StyledDialog 
-        open={confirmOpen} 
-        onClose={() => setConfirmOpen(false)} 
-        maxWidth="xs" 
-        fullWidth
-      >
-        <DialogTitle sx={{ 
-          fontWeight: 700,
-          color: "#dc2626",
-          fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" },
-          p: { xs: 1.5, sm: 2, md: 2.5 }
-        }}>
-          Confirm Delete
-        </DialogTitle>
+      {/* Delete Confirmation */}
+      <StyledDialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, color: "#dc2626", p: { xs: 1.5, sm: 2, md: 2.5 } }}>Confirm Delete</DialogTitle>
         <DialogContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
-          <Typography sx={{ color: "#64748b", fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" } }}>
-            Are you sure you want to delete this service provider? This action cannot be undone.
-          </Typography>
+          <Typography>Are you sure you want to delete this service provider? This action cannot be undone.</Typography>
         </DialogContent>
-        <DialogActions sx={{ 
-          p: { xs: 1.5, sm: 2, md: 2.5 }, 
-          gap: 0.5,
-          flexDirection: { xs: 'column', sm: 'row' }
-        }}>
-          <Button 
-            onClick={() => setConfirmOpen(false)}
-            disabled={submitting}
-            sx={{
-              textTransform: "none",
-              borderRadius: "10px",
-              color: "#64748b",
-              width: { xs: '100%', sm: 'auto' },
-              order: { xs: 2, sm: 1 },
-              '&:hover': {
-                backgroundColor: "#f1f5f9"
-              }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            variant="contained" 
-            color="error" 
-            onClick={handleConfirmDelete}
-            disabled={submitting}
-            sx={{
-              textTransform: "none",
-              borderRadius: "10px",
-              fontWeight: 600,
-              px: 3,
-              width: { xs: '100%', sm: 'auto' },
-              order: { xs: 1, sm: 2 }
-            }}
-          >
+        <DialogActions sx={{ p: { xs: 1.5, sm: 2, md: 2.5 }, gap: 0.5, flexDirection: { xs: 'column', sm: 'row' } }}>
+          <Button onClick={() => setConfirmOpen(false)} disabled={submitting} sx={{ textTransform: "none", borderRadius: "10px", color: "#64748b", width: { xs: '100%', sm: 'auto' }, order: { xs: 2, sm: 1 }, '&:hover': { backgroundColor: "#f1f5f9" } }}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={submitting} sx={{ textTransform: "none", borderRadius: "10px", fontWeight: 600, px: 3, width: { xs: '100%', sm: 'auto' }, order: { xs: 1, sm: 2 } }}>
             {submitting ? <CircularProgress size={24} color="inherit" /> : "Yes, Delete"}
           </Button>
         </DialogActions>
       </StyledDialog>
 
-      {/* ================= SNACKBAR ================= */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        sx={{
-          '& .MuiSnackbarContent-root': {
-            [theme.breakpoints.down('xs')]: {
-              minWidth: 'auto',
-              width: '95%',
-            }
-          }
-        }}
-      >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
-          severity={snackbar.severity}
-          variant="filled"
-          sx={{ 
-            width: '100%',
-            borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            '& .MuiAlert-icon': {
-              fontSize: { xs: '18px', sm: '22px' }
-            }
-          }}
-        >
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} variant="filled" sx={{ borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

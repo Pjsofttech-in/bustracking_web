@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// src/pages/Bus/BusRoute.jsx
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Paper,
@@ -46,9 +47,6 @@ import {
   Route as RouteIcon,
   LocationOn as LocationOnIcon,
   AccessTime as AccessTimeIcon,
-  DirectionsBus as DirectionsBusIcon,
-  Person as PersonIcon,
-  SupervisorAccount as SupervisorAccountIcon,
   ArrowUpward as ArrowUpwardIcon,
   ArrowDownward as ArrowDownwardIcon,
   Clear as ClearIcon,
@@ -56,9 +54,6 @@ import {
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import busRouteApi from "../../api/busRouteApi";
-import busApi from "../../api/busApi";
-import driverApi from "../../api/driverApi";
-import conductorApi from "../../api/conductorApi";
 import busStopApi from "../../api/busStopApi";
 
 // ================= STYLED COMPONENTS =================
@@ -101,7 +96,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   "@media (max-width: 380px)": { borderRadius: "6px", margin: "0 -2px" },
 }));
 
-// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 280px)",
   minHeight: "400px",
@@ -162,7 +156,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "& td:last-of-type": { paddingRight: "12px", [theme.breakpoints.down("sm")]: { paddingRight: "8px" }, [theme.breakpoints.down("xs")]: { paddingRight: "6px" } },
 }));
 
-// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
   borderRadius: "10px",
   padding: "6px 16px",
@@ -180,7 +173,6 @@ const AddButton = styled(Button)(({ theme }) => ({
   "@media (max-width: 380px)": { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" },
 }));
 
-// ---- Inline Stats (adjustable size) ----
 const InlineStats = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -207,54 +199,6 @@ const InlineStats = styled(Box)(({ theme }) => ({
     "&.active .num": { color: "#16a34a" },
     "&.inactive .num": { color: "#d97706" },
     "&.completed .num": { color: "#2563eb" },
-  },
-}));
-
-// ---- Filter input (white background, tiny) ----
-const FilterInput = styled(TextField)(({ theme }) => ({
-  "& .MuiOutlinedInput-root": {
-    backgroundColor: "#ffffff",
-    borderRadius: "4px",
-    color: "#1e293b",
-    "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
-    "&:hover fieldset": { borderColor: "#6495ED" },
-    "&.Mui-focused fieldset": { borderColor: "#6495ED", borderWidth: "2px" },
-    "& input": {
-      padding: "2px 6px",
-      fontSize: "0.6rem",
-      [theme.breakpoints.down("md")]: { fontSize: "0.55rem", padding: "2px 5px" },
-      [theme.breakpoints.down("sm")]: { fontSize: "0.5rem", padding: "1px 4px" },
-      "&::placeholder": {
-        color: "rgba(0,0,0,0.4)",
-        opacity: 1,
-      },
-    },
-  },
-  "& .MuiInputAdornment-root": {
-    marginRight: "2px",
-    "& svg": {
-      fontSize: "0.7rem",
-      color: "#94a3b8",
-    },
-  },
-  width: "100%",
-  minWidth: "40px",
-}));
-
-// ---- Mobile search field ----
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  "& .MuiOutlinedInput-root": {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    "&:hover fieldset": { borderColor: "#6495ED" },
-    "&.Mui-focused fieldset": { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down("sm")]: { borderRadius: "8px" },
-    [theme.breakpoints.down("xs")]: { borderRadius: "6px" },
-  },
-  "& .MuiInputBase-input": {
-    [theme.breakpoints.down("sm")]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down("xs")]: { fontSize: "0.75rem", padding: "8px 10px" },
   },
 }));
 
@@ -289,37 +233,20 @@ export default function BusRoute() {
 
   // Data state
   const [routes, setRoutes] = useState([]);
-  const [filteredRoutes, setFilteredRoutes] = useState([]);
-  const [buses, setBuses] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [conductors, setConductors] = useState([]);
   const [stops, setStops] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // ---- Per‑column filters (desktop) ----
-  const [filters, setFilters] = useState({
-    id: "",
-    routeName: "",
-    description: "",
-    startStopName: "",
-    endStopName: "",
-    busNumber: "",
-    driverName: "",
-    conductorName: "",
-    status: "",
-  });
-  // ---- Mobile global search ----
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
-
-  // Dialog state
   const [openDialog, setOpenDialog] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Form state
+  // ---- FILTER STATE ----
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   const emptyForm = {
     routeName: "",
     description: "",
@@ -330,46 +257,34 @@ export default function BusRoute() {
     totalDistanceKm: "",
     estimatedTimeMin: "",
     status: "",
-    busId: "",
-    driverId: "",
-    conductorId: "",
     stopIds: [],
   };
   const [form, setForm] = useState(emptyForm);
 
-  // Snackbar
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   });
 
-  // ================= SORTING HELPER (descending ID) =================
   const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
 
   // ================= LOAD DATA =================
   const loadData = async () => {
     setLoading(true);
     try {
-      const [routesData, busesData, driversData, conductorsData, stopsData] = await Promise.all([
+      const [routesData, stopsData] = await Promise.all([
         busRouteApi.getAll(),
-        busApi.getAll(),
-        driverApi.getAllDrivers(),
-        conductorApi.getAllConductors(),
         busStopApi.getAll(),
       ]);
       const sorted = sortByIdDesc(Array.isArray(routesData) ? routesData : []);
       setRoutes(sorted);
-      setFilteredRoutes(sorted);
-      setBuses(busesData);
-      setDrivers(driversData);
-      setConductors(conductorsData);
-      setStops(stopsData);
+      setStops(Array.isArray(stopsData) ? stopsData : []);
     } catch (error) {
       console.error("Error loading data:", error);
       showSnackbar("Failed to load data: " + error.message, "error");
       setRoutes([]);
-      setFilteredRoutes([]);
+      setStops([]);
     } finally {
       setLoading(false);
     }
@@ -379,52 +294,29 @@ export default function BusRoute() {
     loadData();
   }, []);
 
-  // ================= FILTERING LOGIC =================
-  useEffect(() => {
-    let filtered = routes;
-
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    filtered = filtered.filter((r) =>
-      matches(r.id, filters.id) &&
-      matches(r.routeName, filters.routeName) &&
-      matches(r.description, filters.description) &&
-      matches(r.startStopName, filters.startStopName) &&
-      matches(r.endStopName, filters.endStopName) &&
-      matches(r.busNumber, filters.busNumber) &&
-      matches(r.driverName, filters.driverName) &&
-      matches(r.conductorName, filters.conductorName) &&
-      matches(r.status, filters.status)
-    );
-
-    // Mobile global search
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter((r) =>
-        matches(r.id, term) ||
-        matches(r.routeName, term) ||
-        matches(r.description, term) ||
-        matches(r.startStopName, term) ||
-        matches(r.endStopName, term) ||
-        matches(r.busNumber, term) ||
-        matches(r.driverName, term) ||
-        matches(r.conductorName, term) ||
-        matches(r.status, term)
-      );
-    }
-
-    setFilteredRoutes(filtered);
-  }, [routes, filters, mobileSearchTerm, isMobile]);
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
-  // ================= FORM HANDLING =================
+  // ================= FILTERED ROUTES =================
+  const filteredRoutes = useMemo(() => {
+    return routes.filter((route) => {
+      const matchesSearch =
+        route.routeName.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
+        (route.description && route.description.toLowerCase().includes(searchQuery.toLowerCase().trim()));
+
+      const matchesStatus = statusFilter === "" || route.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [routes, searchQuery, statusFilter]);
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("");
+  };
+
+  // ================= HANDLERS =================
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -456,16 +348,6 @@ export default function BusRoute() {
     setSelectedId(null);
   };
 
-  // ================= FILTER HANDLERS =================
-  const handleFilterChange = (field) => (e) => {
-    setFilters((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
-  };
-
-  // ================= DIALOG HANDLING =================
   const handleAddOpen = () => {
     resetForm();
     setOpenDialog(true);
@@ -482,9 +364,6 @@ export default function BusRoute() {
       totalDistanceKm: route.totalDistanceKm || "",
       estimatedTimeMin: route.estimatedTimeMin || "",
       status: route.status || "",
-      busId: route.busId || "",
-      driverId: route.driverId || "",
-      conductorId: route.conductorId || "",
       stopIds: route.stops ? route.stops.map((s) => s.stopId) : [],
     });
     setIsEdit(true);
@@ -497,7 +376,6 @@ export default function BusRoute() {
     resetForm();
   };
 
-  // ================= CRUD OPERATIONS =================
   const handleSubmit = async () => {
     const { routeName, stopIds } = form;
     if (!routeName || stopIds.length === 0) {
@@ -517,9 +395,6 @@ export default function BusRoute() {
         totalDistanceKm: form.totalDistanceKm ? Number(form.totalDistanceKm) : null,
         estimatedTimeMin: form.estimatedTimeMin ? Number(form.estimatedTimeMin) : null,
         status: form.status || null,
-        busId: form.busId ? Number(form.busId) : null,
-        driverId: form.driverId ? Number(form.driverId) : null,
-        conductorId: form.conductorId ? Number(form.conductorId) : null,
         stopIds: stopIds.map(Number),
       };
 
@@ -528,13 +403,11 @@ export default function BusRoute() {
         result = await busRouteApi.update(selectedId, payload);
         const updated = sortByIdDesc(routes.map((r) => (r.id === selectedId ? result : r)));
         setRoutes(updated);
-        setFilteredRoutes(updated);
         showSnackbar("Route updated successfully!", "success");
       } else {
         result = await busRouteApi.create(payload);
         const updated = sortByIdDesc([...routes, result]);
         setRoutes(updated);
-        setFilteredRoutes(updated);
         showSnackbar("Route added successfully!", "success");
       }
       handleCloseDialog();
@@ -552,7 +425,6 @@ export default function BusRoute() {
       await busRouteApi.delete(selectedId);
       const updated = sortByIdDesc(routes.filter((r) => r.id !== selectedId));
       setRoutes(updated);
-      setFilteredRoutes(updated);
       showSnackbar("Route deleted successfully!", "success");
       setDeleteDialogOpen(false);
       resetForm();
@@ -564,7 +436,6 @@ export default function BusRoute() {
     }
   };
 
-  // ================= HELPERS =================
   const getStatusColor = (status) => {
     switch (status) {
       case "ACTIVE": return { bg: "#dcfce7", color: "#16a34a" };
@@ -574,25 +445,11 @@ export default function BusRoute() {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
   const getStopName = (id) => {
     const stop = stops.find((s) => s.id === id);
     return stop ? stop.stopName : "Unknown";
   };
 
-  // ================= LOADING =================
   if (loading) {
     return (
       <PageContainer>
@@ -608,12 +465,11 @@ export default function BusRoute() {
     );
   }
 
-  // ================= RENDER =================
   return (
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header with inline stats and smaller Add button */}
+          {/* Header with inline stats and Add button */}
           <Box sx={{ 
             display: "flex", 
             flexDirection: { xs: "column", sm: "row" }, 
@@ -629,7 +485,6 @@ export default function BusRoute() {
                   Bus Routes
                 </Typography>
               </Box>
-              {/* Inline stats */}
               <InlineStats>
                 <span className="stat-chip">Total <span className="num">{routes.length}</span></span>
                 <span className="stat-chip active">Active <span className="num">{routes.filter(r => r.status === 'ACTIVE').length}</span></span>
@@ -642,13 +497,89 @@ export default function BusRoute() {
             </AddButton>
           </Box>
 
-          {/* Table / Cards */}
+          {/* ===== FILTER BAR ===== */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            alignItems: { xs: 'stretch', sm: 'center' }, 
+            gap: 2, 
+            mb: 2,
+            p: { xs: 1, sm: 1.5 },
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            flexWrap: 'wrap'
+          }}>
+            <TextField
+              placeholder="Search routes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              size="small"
+              sx={{
+                minWidth: { xs: '100%', sm: '200px' },
+                maxWidth: { xs: '100%', sm: '260px' },
+                flex: 1,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '10px',
+                  backgroundColor: 'white',
+                  '& fieldset': { borderColor: '#e2e8f0' },
+                  '&:hover fieldset': { borderColor: '#6495ED' },
+                  '&.Mui-focused fieldset': { borderColor: '#6495ED' }
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchQuery('')} sx={{ p: 0.5 }}>
+                      <ClearIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                label="Status"
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="ACTIVE">Active</MenuItem>
+                <MenuItem value="INACTIVE">Inactive</MenuItem>
+                <MenuItem value="COMPLETED">Completed</MenuItem>
+              </Select>
+            </FormControl>
+
+            {(searchQuery || statusFilter) && (
+              <Button 
+                variant="text" 
+                onClick={clearFilters} 
+                size="small" 
+                sx={{ 
+                  color: '#64748b', 
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  '&:hover': { backgroundColor: 'transparent', color: '#1e293b' }
+                }}
+                startIcon={<ClearIcon sx={{ fontSize: 18 }} />}
+              >
+                Clear
+              </Button>
+            )}
+          </Box>
+
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
-                <Table stickyHeader sx={{ minWidth: 1400 }}>
+                <Table stickyHeader sx={{ minWidth: 1200 }}>
                   <GradientHeader>
-                    {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
                       <TableCell sx={{ minWidth: '150px' }}>Route Name</TableCell>
@@ -658,57 +589,9 @@ export default function BusRoute() {
                       <TableCell sx={{ minWidth: '130px' }}>Time</TableCell>
                       <TableCell sx={{ minWidth: '100px' }}>Distance</TableCell>
                       <TableCell sx={{ minWidth: '100px' }}>Est. Time</TableCell>
-                      <TableCell sx={{ minWidth: '100px' }}>Bus</TableCell>
-                      <TableCell sx={{ minWidth: '120px' }}>Driver</TableCell>
-                      <TableCell sx={{ minWidth: '120px' }}>Conductor</TableCell>
                       <TableCell sx={{ minWidth: '70px' }} align="center">Stops</TableCell>
                       <TableCell sx={{ minWidth: '100px' }} align="center">Status</TableCell>
                       <TableCell sx={{ minWidth: '100px' }} align="center">Actions</TableCell>
-                    </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Name" value={filters.routeName} onChange={handleFilterChange('routeName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Desc" value={filters.description} onChange={handleFilterChange('description')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Start" value={filters.startStopName} onChange={handleFilterChange('startStopName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter End" value={filters.endStopName} onChange={handleFilterChange('endStopName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Time" value={filters.time} onChange={handleFilterChange('time')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Dist" value={filters.distance} onChange={handleFilterChange('distance')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Est" value={filters.estimatedTime} onChange={handleFilterChange('estimatedTime')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Bus" value={filters.busNumber} onChange={handleFilterChange('busNumber')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Driver" value={filters.driverName} onChange={handleFilterChange('driverName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Conductor" value={filters.conductorName} onChange={handleFilterChange('conductorName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        {/* Stops filter – no numeric filter, leave empty */}
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Status" value={filters.status} onChange={handleFilterChange('status')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        {/* Actions – empty */}
-                      </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
@@ -728,9 +611,6 @@ export default function BusRoute() {
                           <TableCell>{r.startTime && r.endTime ? `${r.startTime} - ${r.endTime}` : "-"}</TableCell>
                           <TableCell>{r.totalDistanceKm ? `${r.totalDistanceKm} km` : "-"}</TableCell>
                           <TableCell>{r.estimatedTimeMin ? `${r.estimatedTimeMin} min` : "-"}</TableCell>
-                          <TableCell>{r.busNumber ? <Chip label={r.busNumber} size="small" sx={{ bgcolor: "#dbeafe", color: "#6495ED" }} /> : "-"}</TableCell>
-                          <TableCell>{r.driverName || "-"}</TableCell>
-                          <TableCell>{r.conductorName || "-"}</TableCell>
                           <TableCell align="center">
                             <Chip label={r.stops ? r.stops.length : 0} size="small" sx={{ bgcolor: "#f1f5f9", color: "#475569", fontWeight: 600 }} />
                           </TableCell>
@@ -755,13 +635,15 @@ export default function BusRoute() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={14} align="center" sx={{ py: 6 }}>
+                        <TableCell colSpan={11} align="center" sx={{ py: 6 }}>
                           <RouteIcon sx={{ fontSize: 40, opacity: 0.3, display: "block", margin: "0 auto 8px" }} />
                           <Typography color="text.secondary">
-                            {Object.values(filters).some(f => f) ? "No routes match your filters" : "No bus routes added yet"}
+                            {routes.length === 0 ? "No bus routes added yet" : "No routes match your filters"}
                           </Typography>
-                          {!Object.values(filters).some(f => f) && (
-                            <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>Add your first route</Button>
+                          {routes.length === 0 && (
+                            <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
+                              Add your first route
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -770,23 +652,7 @@ export default function BusRoute() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile card view with global search
               <Box sx={{ p: { xs: 1, sm: 1.5 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
                   {filteredRoutes.length > 0 ? (
                     filteredRoutes.map((r, index) => (
@@ -855,10 +721,12 @@ export default function BusRoute() {
                     <Box sx={{ textAlign: "center", py: 4 }}>
                       <RouteIcon sx={{ fontSize: 48, opacity: 0.2, mb: 2 }} />
                       <Typography color="text.secondary">
-                        {mobileSearchTerm ? `No routes found matching "${mobileSearchTerm}"` : "No bus routes added yet"}
+                        {routes.length === 0 ? "No bus routes added yet" : "No routes match your filters"}
                       </Typography>
-                      {!mobileSearchTerm && (
-                        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>Add first route</Button>
+                      {routes.length === 0 && (
+                        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
+                          Add first route
+                        </Button>
                       )}
                     </Box>
                   )}
@@ -920,7 +788,7 @@ export default function BusRoute() {
                   label="Start Stop"
                 >
                   <MenuItem value="">None</MenuItem>
-                  {stops.map((s) => (
+                  {Array.isArray(stops) && stops.map((s) => (
                     <MenuItem key={s.id} value={s.id}>{s.stopName}</MenuItem>
                   ))}
                 </Select>
@@ -936,7 +804,7 @@ export default function BusRoute() {
                   label="End Stop"
                 >
                   <MenuItem value="">None</MenuItem>
-                  {stops.map((s) => (
+                  {Array.isArray(stops) && stops.map((s) => (
                     <MenuItem key={s.id} value={s.id}>{s.stopName}</MenuItem>
                   ))}
                 </Select>
@@ -1015,57 +883,6 @@ export default function BusRoute() {
 
             <Grid item xs={12} sm={4}>
               <FormControl fullWidth disabled={submitting} size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}>
-                <InputLabel>Bus</InputLabel>
-                <Select
-                  name="busId"
-                  value={form.busId}
-                  onChange={handleChange}
-                  label="Bus"
-                >
-                  <MenuItem value="">None</MenuItem>
-                  {buses.map((b) => (
-                    <MenuItem key={b.id} value={b.id}>
-                      {b.busNumber} ({b.busModelName || "No model"})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth disabled={submitting} size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}>
-                <InputLabel>Driver</InputLabel>
-                <Select
-                  name="driverId"
-                  value={form.driverId}
-                  onChange={handleChange}
-                  label="Driver"
-                >
-                  <MenuItem value="">None</MenuItem>
-                  {drivers.map((d) => (
-                    <MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth disabled={submitting} size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}>
-                <InputLabel>Conductor</InputLabel>
-                <Select
-                  name="conductorId"
-                  value={form.conductorId}
-                  onChange={handleChange}
-                  label="Conductor"
-                >
-                  <MenuItem value="">None</MenuItem>
-                  {conductors.map((c) => (
-                    <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth disabled={submitting} size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}>
                 <InputLabel>Status</InputLabel>
                 <Select
                   name="status"
@@ -1093,7 +910,7 @@ export default function BusRoute() {
                     label="Add Stop"
                   >
                     <MenuItem value="">Select a stop</MenuItem>
-                    {stops.map((s) => (
+                    {Array.isArray(stops) && stops.map((s) => (
                       <MenuItem key={s.id} value={s.id} disabled={form.stopIds.includes(s.id)}>
                         {s.stopName}
                       </MenuItem>

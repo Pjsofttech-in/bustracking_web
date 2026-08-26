@@ -13,12 +13,6 @@ import {
   Typography,
   Chip,
   IconButton,
-  TextField,
-  InputAdornment,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
   Button,
   Dialog,
   DialogTitle,
@@ -39,13 +33,11 @@ import {
 } from "@mui/material";
 import {
   QrCodeScanner as QrCodeScannerIcon,
-  Search as SearchIcon,
   Refresh as RefreshIcon,
   Close as CloseIcon,
   Person as PersonIcon,
   DirectionsBus as DirectionsBusIcon,
-  CalendarToday as CalendarTodayIcon,
-  School as SchoolIcon
+  CalendarToday as CalendarTodayIcon
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 
@@ -90,7 +82,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
-// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 400px)",
   minHeight: "300px",
@@ -152,7 +143,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
-// ---- Inline Stats (adjustable size) ----
 const InlineStats = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -182,38 +172,6 @@ const InlineStats = styled(Box)(({ theme }) => ({
   }
 }));
 
-// ---- Filter input (white background, tiny) ----
-const FilterInput = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#ffffff',
-    borderRadius: '4px',
-    color: '#1e293b',
-    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-    '&:hover fieldset': { borderColor: '#6495ED' },
-    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
-    '& input': {
-      padding: '2px 6px',
-      fontSize: '0.6rem',
-      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
-      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
-      '&::placeholder': {
-        color: 'rgba(0,0,0,0.4)',
-        opacity: 1
-      }
-    }
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: '2px',
-    '& svg': {
-      fontSize: '0.7rem',
-      color: '#94a3b8'
-    }
-  },
-  width: '100%',
-  minWidth: '40px',
-}));
-
-// ---- Smaller Refresh Button ----
 const RefreshButton = styled(Button)(({ theme }) => ({
   borderRadius: "10px",
   padding: "6px 16px",
@@ -229,23 +187,6 @@ const RefreshButton = styled(Button)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: { width: "100%", padding: "8px 12px", fontSize: "0.8rem", justifyContent: "center" },
   [theme.breakpoints.down('xs')]: { padding: "6px 10px", fontSize: "0.7rem", borderRadius: "8px" },
   '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
-}));
-
-// ---- Mobile search field ----
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    '&:hover fieldset': { borderColor: "#6495ED" },
-    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
-    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
-  },
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -279,10 +220,7 @@ export default function Scan() {
   const isExtraSmall = useMediaQuery('(max-width: 380px)');
 
   const [scans, setScans] = useState([]);
-  const [filteredScans, setFilteredScans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterBus, setFilterBus] = useState("all");
   const [selectedScan, setSelectedScan] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -290,17 +228,6 @@ export default function Scan() {
     message: "",
     severity: "success"
   });
-
-  // ---- Per‑column filters (desktop) ----
-  const [filters, setFilters] = useState({
-    id: "",
-    studentName: "",
-    studentRollNumber: "",
-    busNumber: "",
-    scannedAt: "",
-  });
-  // ---- Mobile global search ----
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
 
   // ================= SORTING HELPER (descending ID) =================
   const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
@@ -312,12 +239,10 @@ export default function Scan() {
       const data = await studentScanApi.getAll();
       const sorted = sortByIdDesc(Array.isArray(data) ? data : []);
       setScans(sorted);
-      setFilteredScans(sorted);
     } catch (error) {
       console.error("Error loading scans:", error);
       showSnackbar("Failed to load scans", "error");
       setScans([]);
-      setFilteredScans([]);
     } finally {
       setLoading(false);
     }
@@ -327,77 +252,11 @@ export default function Scan() {
     loadScans();
   }, []);
 
-  // ================= FILTERING LOGIC =================
-  useEffect(() => {
-    let filtered = scans;
-
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    // Apply per‑column filters
-    filtered = filtered.filter((s) =>
-      matches(s.id, filters.id) &&
-      matches(s.studentName, filters.studentName) &&
-      matches(s.studentRollNumber, filters.studentRollNumber) &&
-      matches(s.busNumber, filters.busNumber) &&
-      matches(s.scannedAt, filters.scannedAt)
-    );
-
-    // Additional bus filter (dropdown)
-    if (filterBus !== "all") {
-      filtered = filtered.filter((s) => s.busNumber === filterBus);
-    }
-
-    // Additional search (legacy)
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter((s) =>
-        matches(s.studentName, term) ||
-        matches(s.studentRollNumber, term) ||
-        matches(s.busNumber, term)
-      );
-    }
-
-    // Mobile global search (extra)
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter((s) =>
-        matches(s.id, term) ||
-        matches(s.studentName, term) ||
-        matches(s.studentRollNumber, term) ||
-        matches(s.busNumber, term) ||
-        matches(s.scannedAt, term)
-      );
-    }
-
-    setFilteredScans(filtered);
-  }, [scans, filters, filterBus, searchTerm, mobileSearchTerm, isMobile]);
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
-  // ================= HANDLERS =================
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const handleFilterChange = (event) => {
-    setFilterBus(event.target.value);
-  };
-
-  const handleFilterInputChange = (field) => (e) => {
-    setFilters((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
-  };
-
-  // ================= GET UNIQUE BUSES =================
+  // ================= GET UNIQUE BUSES (for stats only) =================
   const getUniqueBuses = () => {
     const busNumbers = scans.map((scan) => scan.busNumber);
     return [...new Set(busNumbers)];
@@ -477,43 +336,12 @@ export default function Scan() {
             </RefreshButton>
           </Box>
 
-          {/* Search and Filter (desktop) – now combined with per‑column filters, but we keep the search and bus filter for convenience */}
-          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: { xs: 1.5, sm: 2 }, mb: { xs: 2, sm: 2 } }}>
-            <TextField
-              placeholder="Search by student name, roll number or bus..."
-              value={searchTerm}
-              onChange={handleSearch}
-              sx={{ flex: 1 }}
-              size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
-              InputProps={{
-                startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} /></InputAdornment>,
-                endAdornment: searchTerm && (
-                  <InputAdornment position="end">
-                    <IconButton size={isExtraSmall ? "small" : "medium"} onClick={() => setSearchTerm("")}>
-                      <CloseIcon sx={{ fontSize: isExtraSmall ? 16 : 20 }} />
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
-            />
-            <FormControl sx={{ minWidth: { xs: "100%", sm: 200 } }} size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}>
-              <InputLabel>Filter by Bus</InputLabel>
-              <Select value={filterBus} onChange={handleFilterChange} label="Filter by Bus" sx={{ borderRadius: "10px" }}>
-                <MenuItem value="all">All Buses</MenuItem>
-                {uniqueBuses.map((bus) => (
-                  <MenuItem key={bus} value={bus}>{bus}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-
           {/* Table/List View */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
                 <Table stickyHeader sx={{ minWidth: 800 }}>
                   <GradientHeader>
-                    {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
                       <TableCell sx={{ minWidth: '150px' }}>Student</TableCell>
@@ -522,31 +350,10 @@ export default function Scan() {
                       <TableCell sx={{ minWidth: '200px' }}>Scanned At</TableCell>
                       <TableCell sx={{ minWidth: '100px' }} align="center">Status</TableCell>
                     </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter ID" value={filters.id} onChange={handleFilterInputChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Student" value={filters.studentName} onChange={handleFilterInputChange('studentName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Roll" value={filters.studentRollNumber} onChange={handleFilterInputChange('studentRollNumber')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Bus" value={filters.busNumber} onChange={handleFilterInputChange('busNumber')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Date" value={filters.scannedAt} onChange={handleFilterInputChange('scannedAt')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        {/* Status filter – no filter needed */} 
-                      </TableCell>
-                    </TableRow>
                   </GradientHeader>
                   <TableBody>
-                    {filteredScans.length > 0 ? (
-                      filteredScans.map((scan) => (
+                    {scans.length > 0 ? (
+                      scans.map((scan) => (
                         <StyledTableRow key={scan.id} onClick={() => { setSelectedScan(scan); setDetailsOpen(true); }}>
                           <TableCell>{scan.id}</TableCell>
                           <TableCell>
@@ -578,7 +385,6 @@ export default function Scan() {
                         <TableCell colSpan={6} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
                           <QrCodeScannerIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
                           <Typography variant="body1" color="text.secondary">No scan records found</Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Try adjusting your search or filter</Typography>
                         </TableCell>
                       </TableRow>
                     )}
@@ -586,26 +392,10 @@ export default function Scan() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile/Tablet Card View with global search
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
-                  {filteredScans.length > 0 ? (
-                    filteredScans.map((scan, index) => (
+                  {scans.length > 0 ? (
+                    scans.map((scan, index) => (
                       <Grow in key={scan.id} timeout={300 * (index + 1) * 0.1}>
                         <MobileCard onClick={() => { setSelectedScan(scan); setDetailsOpen(true); }}>
                           <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 }, '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5 } } }}>
@@ -634,10 +424,7 @@ export default function Scan() {
                   ) : (
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <QrCodeScannerIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
-                      <Typography variant="body1" color="text.secondary">
-                        {mobileSearchTerm ? `No scans found matching "${mobileSearchTerm}"` : "No scan records found"}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Try adjusting your search or filter</Typography>
+                      <Typography variant="body1" color="text.secondary">No scan records found</Typography>
                     </Box>
                   )}
                 </Stack>

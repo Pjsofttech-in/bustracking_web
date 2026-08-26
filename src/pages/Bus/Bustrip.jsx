@@ -1,5 +1,5 @@
 // src/pages/Bus/BusTrip.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import busTripApi from "../../api/busTripApi";
 import busApi from "../../api/busApi";
 import busRouteApi from "../../api/busRouteApi";
@@ -37,7 +37,10 @@ import {
   Fade,
   Grow,
   InputAdornment,
-  TableContainer as MuiTableContainer
+  TableContainer as MuiTableContainer,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
@@ -46,7 +49,8 @@ import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import RouteIcon from "@mui/icons-material/Route";
 import PersonIcon from "@mui/icons-material/Person";
 import ScheduleIcon from "@mui/icons-material/Schedule";
-import SearchIcon from "@mui/icons-material/Search";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import ClearIcon from "@mui/icons-material/Clear";
 import { styled } from "@mui/material/styles";
 
 // ================= STYLED COMPONENTS =================
@@ -90,10 +94,9 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
-// ---- Table container with horizontal scroll and increased height ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
-  maxHeight: "calc(100vh - 180px)",   // Reduced subtraction → taller table
-  minHeight: "500px",                 // Increased minimum height
+  maxHeight: "calc(100vh - 180px)",
+  minHeight: "500px",
   width: "100%",
   overflowX: "auto",
   '&::-webkit-scrollbar': { width: '6px', height: '6px' },
@@ -151,7 +154,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
-// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
   borderRadius: "10px",
   padding: "6px 16px",
@@ -169,7 +171,6 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
 }));
 
-// ---- Inline Stats (adjustable size) ----
 const InlineStats = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -197,54 +198,6 @@ const InlineStats = styled(Box)(({ theme }) => ({
     '&.scheduled .num': { color: "#6495ED" },
     '&.completed .num': { color: "#d97706" },
   }
-}));
-
-// ---- Filter input (white background, tiny) ----
-const FilterInput = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#ffffff',
-    borderRadius: '4px',
-    color: '#1e293b',
-    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-    '&:hover fieldset': { borderColor: '#6495ED' },
-    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
-    '& input': {
-      padding: '2px 6px',
-      fontSize: '0.6rem',
-      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
-      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
-      '&::placeholder': {
-        color: 'rgba(0,0,0,0.4)',
-        opacity: 1
-      }
-    }
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: '2px',
-    '& svg': {
-      fontSize: '0.7rem',
-      color: '#94a3b8'
-    }
-  },
-  width: '100%',
-  minWidth: '40px',
-}));
-
-// ---- Mobile search field ----
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    '&:hover fieldset': { borderColor: "#6495ED" },
-    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
-    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
-  },
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -302,7 +255,6 @@ export default function BusTrip() {
 
   const [open, setOpen] = useState(false);
   const [trips, setTrips] = useState([]);
-  const [filteredTrips, setFilteredTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -312,20 +264,6 @@ export default function BusTrip() {
     message: "",
     severity: "success"
   });
-
-  // ---- Per‑column filters (desktop) ----
-  const [filters, setFilters] = useState({
-    id: "",
-    bus: "",
-    route: "",
-    driver: "",
-    conductor: "",
-    startTime: "",
-    endTime: "",
-    status: ""
-  });
-  // ---- Mobile global search ----
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
 
   const [drivers, setDrivers] = useState([]);
   const [conductors, setConductors] = useState([]);
@@ -344,10 +282,13 @@ export default function BusTrip() {
 
   const statusOptions = ["SCHEDULED", "ONGOING", "COMPLETED", "CANCELLED"];
 
-  // ================= SORTING HELPER (descending ID) =================
+  // ---- FILTER STATE ----
+  const [routeFilter, setRouteFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [busFilter, setBusFilter] = useState(null);
+
   const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
 
-  // ================= LOAD DATA =================
   const loadData = async () => {
     setLoading(true);
     try {
@@ -360,7 +301,6 @@ export default function BusTrip() {
       ]);
       const sortedTrips = sortByIdDesc(tripsData);
       setTrips(sortedTrips);
-      setFilteredTrips(sortedTrips);
       setBuses(busesData);
       setRoutes(routesData);
       setDrivers(driversData);
@@ -369,7 +309,6 @@ export default function BusTrip() {
       console.error("Error loading data:", error);
       showSnackbar("Failed to load data", "error");
       setTrips([]);
-      setFilteredTrips([]);
     } finally {
       setLoading(false);
     }
@@ -379,56 +318,34 @@ export default function BusTrip() {
     loadData();
   }, []);
 
-  // ================= FILTERING LOGIC =================
-  useEffect(() => {
-    let filtered = trips;
-
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    // Helper to get display strings for related entities
-    const getBusDisplay = (t) => t.bus?.busNumber || `ID: ${t.busId}`;
-    const getRouteDisplay = (t) => t.route?.routeName || `ID: ${t.routeId}`;
-    const getDriverDisplay = (t) => t.driver?.name || `ID: ${t.driverId}`;
-    const getConductorDisplay = (t) => t.conductor?.name || `ID: ${t.conductorId}`;
-
-    filtered = filtered.filter(t =>
-      matches(t.id, filters.id) &&
-      matches(getBusDisplay(t), filters.bus) &&
-      matches(getRouteDisplay(t), filters.route) &&
-      matches(getDriverDisplay(t), filters.driver) &&
-      matches(getConductorDisplay(t), filters.conductor) &&
-      matches(t.startTime, filters.startTime) &&
-      matches(t.endTime, filters.endTime) &&
-      matches(t.tripStatus, filters.status)
-    );
-
-    // Mobile global search
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter(t =>
-        matches(t.id, term) ||
-        matches(getBusDisplay(t), term) ||
-        matches(getRouteDisplay(t), term) ||
-        matches(getDriverDisplay(t), term) ||
-        matches(getConductorDisplay(t), term) ||
-        matches(t.startTime, term) ||
-        matches(t.endTime, term) ||
-        matches(t.tripStatus, term)
-      );
-    }
-
-    setFilteredTrips(filtered);
-  }, [trips, filters, mobileSearchTerm, isMobile]);
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
-  // ================= HANDLE SUBMIT =================
+  // ================= FILTERED TRIPS =================
+  const filteredTrips = useMemo(() => {
+    let filtered = trips;
+    if (routeFilter.trim()) {
+      const filterNum = Number(routeFilter.trim());
+      if (!isNaN(filterNum)) {
+        filtered = filtered.filter(trip => trip.routeId === filterNum);
+      }
+    }
+    if (statusFilter) {
+      filtered = filtered.filter(trip => trip.tripStatus === statusFilter);
+    }
+    if (busFilter) {
+      filtered = filtered.filter(trip => trip.busId === busFilter.id);
+    }
+    return filtered;
+  }, [trips, routeFilter, statusFilter, busFilter]);
+
+  const clearFilters = () => {
+    setRouteFilter("");
+    setStatusFilter("");
+    setBusFilter(null);
+  };
+
   const handleSubmit = async () => {
     if (!formData.busId || !formData.routeId || !formData.driverId ||
         !formData.conductorId || !formData.startTime || !formData.tripStatus) {
@@ -451,7 +368,6 @@ export default function BusTrip() {
       const newTrip = await busTripApi.create(payload);
       const updatedTrips = sortByIdDesc([...trips, newTrip]);
       setTrips(updatedTrips);
-      setFilteredTrips(updatedTrips);
       showSnackbar("Trip Added Successfully ✅", "success");
       handleCloseDialog();
     } catch (error) {
@@ -462,7 +378,6 @@ export default function BusTrip() {
     }
   };
 
-  // ================= DELETE =================
   const handleDeleteClick = (trip) => {
     setSelectedTrip(trip);
     setDeleteDialogOpen(true);
@@ -474,7 +389,6 @@ export default function BusTrip() {
       await busTripApi.delete(selectedTrip.id);
       const updatedTrips = sortByIdDesc(trips.filter(t => t.id !== selectedTrip.id));
       setTrips(updatedTrips);
-      setFilteredTrips(updatedTrips);
       showSnackbar("Trip deleted successfully!", "success");
       setDeleteDialogOpen(false);
       setSelectedTrip(null);
@@ -486,7 +400,6 @@ export default function BusTrip() {
     }
   };
 
-  // ================= DIALOG HANDLERS =================
   const handleCloseDialog = () => {
     setOpen(false);
     setFormData({
@@ -514,16 +427,6 @@ export default function BusTrip() {
     setOpen(true);
   };
 
-  // Filter change handlers
-  const handleFilterChange = (field) => (e) => {
-    setFilters(prev => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
-  };
-
-  // ================= HELPERS =================
   const getStatusColor = (status) => {
     switch(status) {
       case 'SCHEDULED': return { bg: '#dbeafe', color: '#6495ED' };
@@ -549,7 +452,6 @@ export default function BusTrip() {
     }
   };
 
-  // ================= LOADING STATE =================
   if (loading) {
     return (
       <PageContainer>
@@ -565,51 +467,85 @@ export default function BusTrip() {
     );
   }
 
-  // ================= RENDER =================
+  const hasActiveFilters = routeFilter.trim() !== "" || statusFilter !== "" || busFilter !== null;
+
   return (
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header Section with inline stats and smaller Add button */}
-          <Box sx={{ 
-            display: "flex", 
-            flexDirection: { xs: "column", sm: "row" }, 
-            justifyContent: "space-between", 
-            alignItems: { xs: "stretch", sm: "center" }, 
-            gap: { xs: 1, sm: 2 }, 
-            mb: { xs: 2, sm: 2.5 } 
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: { xs: 1, sm: 2 } }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {/* Header Section: Title, Stats, Add Button, and Filters */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
+            {/* Row 1: Title, Stats, Add button */}
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: { xs: 1, sm: 2 } }}>
                 <ScheduleIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
                 <Typography variant="h6" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1rem", sm: "1.2rem", md: "1.4rem" }, color: "#1e293b" }}>
                   Bus Trips
                 </Typography>
+                <InlineStats>
+                  <span className="stat-chip">Total <span className="num">{trips.length}</span></span>
+                  <span className="stat-chip ongoing">Ongoing <span className="num">{trips.filter(t => t.tripStatus === 'ONGOING').length}</span></span>
+                  <span className="stat-chip scheduled">Scheduled <span className="num">{trips.filter(t => t.tripStatus === 'SCHEDULED').length}</span></span>
+                  <span className="stat-chip completed">Completed <span className="num">{trips.filter(t => t.tripStatus === 'COMPLETED').length}</span></span>
+                </InlineStats>
               </Box>
-              {/* Inline stats */}
-              <InlineStats>
-                <span className="stat-chip">Total <span className="num">{trips.length}</span></span>
-                <span className="stat-chip ongoing">Ongoing <span className="num">{trips.filter(t => t.tripStatus === 'ONGOING').length}</span></span>
-                <span className="stat-chip scheduled">Scheduled <span className="num">{trips.filter(t => t.tripStatus === 'SCHEDULED').length}</span></span>
-                <span className="stat-chip completed">Completed <span className="num">{trips.filter(t => t.tripStatus === 'COMPLETED').length}</span></span>
-              </InlineStats>
+              <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={handleOpenDialog}>
+                Add Trip
+              </AddButton>
             </Box>
-            <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={handleOpenDialog}>
-              Add Trip
-            </AddButton>
+
+            {/* Row 2: Filters */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+              <TextField
+                size="small"
+                label="Route ID"
+                value={routeFilter}
+                onChange={(e) => setRouteFilter(e.target.value)}
+                sx={{ minWidth: { xs: "100%", sm: "160px" }, width: { xs: "100%", sm: "auto" }, flex: 1 }}
+                InputProps={{ type: "number" }}
+              />
+              <StyledAutocomplete
+                size="small"
+                options={buses}
+                getOptionLabel={(b) => b?.busNumber || ''}
+                value={busFilter}
+                onChange={(e, v) => setBusFilter(v)}
+                renderInput={(params) => <TextField {...params} label="Bus" />}
+                sx={{ minWidth: { xs: "100%", sm: "180px" }, width: { xs: "100%", sm: "auto" }, flex: 1 }}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+              />
+              <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: "180px" }, width: { xs: "100%", sm: "auto" }, flex: 1 }}>
+                <InputLabel>Status</InputLabel>
+                <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} label="Status">
+                  <MenuItem value="">All</MenuItem>
+                  {statusOptions.map(status => (
+                    <MenuItem key={status} value={status}>{status}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {hasActiveFilters && (
+                <Button variant="text" onClick={clearFilters} size="small" sx={{ color: '#64748b', textTransform: 'none', fontWeight: 500, minWidth: 'auto', px: 1 }} startIcon={<ClearIcon sx={{ fontSize: 18 }} />}>
+                  Clear
+                </Button>
+              )}
+            </Box>
           </Box>
 
           {/* Table/List View */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
-                <Table stickyHeader size={isExtraSmall ? "small" : "medium"} sx={{ minWidth: 1200 }}>
+                <Table stickyHeader size={isExtraSmall ? "small" : "medium"} sx={{ minWidth: 1700 }}>
                   <GradientHeader>
-                    {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
+                      <TableCell sx={{ minWidth: '80px' }}>Bus ID</TableCell>
                       <TableCell sx={{ minWidth: '130px' }}>Bus</TableCell>
+                      <TableCell sx={{ minWidth: '100px' }}>Bus Type</TableCell>
+                      <TableCell sx={{ minWidth: '120px' }}>Bus Model</TableCell>
+                      <TableCell sx={{ minWidth: '150px' }}>Service Provider</TableCell>
                       <TableCell sx={{ minWidth: '140px' }}>Route</TableCell>
+                      <TableCell sx={{ minWidth: '80px' }}>Route ID</TableCell>
                       <TableCell sx={{ minWidth: '140px' }}>Driver</TableCell>
                       <TableCell sx={{ minWidth: '140px' }}>Conductor</TableCell>
                       <TableCell sx={{ minWidth: '160px' }}>Start Time</TableCell>
@@ -617,42 +553,13 @@ export default function BusTrip() {
                       <TableCell sx={{ minWidth: '100px' }}>Status</TableCell>
                       <TableCell sx={{ minWidth: '80px' }}>Actions</TableCell>
                     </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Bus" value={filters.bus} onChange={handleFilterChange('bus')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Route" value={filters.route} onChange={handleFilterChange('route')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Driver" value={filters.driver} onChange={handleFilterChange('driver')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Conductor" value={filters.conductor} onChange={handleFilterChange('conductor')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Start" value={filters.startTime} onChange={handleFilterChange('startTime')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter End" value={filters.endTime} onChange={handleFilterChange('endTime')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Status" value={filters.status} onChange={handleFilterChange('status')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        {/* Actions filter – empty cell */}
-                      </TableCell>
-                    </TableRow>
                   </GradientHeader>
                   <TableBody>
                     {filteredTrips.length > 0 ? (
                       filteredTrips.map((trip) => (
                         <StyledTableRow key={trip.id}>
                           <TableCell>{trip.id}</TableCell>
+                          <TableCell>{trip.busId}</TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                               <DirectionsBusIcon sx={{ fontSize: { xs: 14, sm: 16, md: 18 }, color: "#6495ED" }} />
@@ -662,12 +569,38 @@ export default function BusTrip() {
                             </Box>
                           </TableCell>
                           <TableCell>
+                            <Chip
+                              label={trip.bus?.busType || '-'}
+                              size="small"
+                              sx={{
+                                bgcolor: trip.bus?.busType ? '#e0e7ff' : '#f1f5f9',
+                                color: trip.bus?.busType ? '#4f46e5' : '#94a3b8',
+                                fontWeight: 500,
+                                fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.7rem' },
+                                height: { xs: '18px', sm: '20px', md: '24px' }
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.8rem' }, wordBreak: 'break-word' }}>
+                              {trip.bus?.busModelName || '-'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.8rem' }, wordBreak: 'break-word' }}>
+                              {trip.bus?.serviceProvider?.serviceprovidername || '-'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                               <RouteIcon sx={{ fontSize: { xs: 12, sm: 14, md: 16 }, color: '#94a3b8' }} />
                               <Typography variant="body2" sx={{ fontSize: { xs: '0.55rem', sm: '0.65rem', md: '0.8rem' }, wordBreak: 'break-word' }}>
                                 {trip.route?.routeName || `ID: ${trip.routeId}`}
                               </Typography>
                             </Box>
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 500, fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.85rem' } }}>
+                            {trip.routeId || '-'}
                           </TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -701,12 +634,12 @@ export default function BusTrip() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={9} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
-                          <Typography variant="body1" color="text.secondary">
-                            <ScheduleIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            {Object.values(filters).some(f => f) ? "No trips match your filters" : "No trips added yet"}
+                        <TableCell colSpan={14} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
+                          <ScheduleIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
+                          <Typography color="text.secondary">
+                            {trips.length === 0 ? "No trips added yet" : "No trips match your filters"}
                           </Typography>
-                          {!Object.values(filters).some(f => f) && (
+                          {trips.length === 0 && (
                             <Button variant="outlined" startIcon={<AddIcon />} onClick={handleOpenDialog} sx={{ mt: 2, borderRadius: "10px", textTransform: "none", borderColor: "#6495ED", color: "#6495ED", fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                               Add your first trip
                             </Button>
@@ -718,23 +651,7 @@ export default function BusTrip() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // ----- MOBILE CARD VIEW with global search -----
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
                   {filteredTrips.length > 0 ? (
                     filteredTrips.map((trip, index) => (
@@ -748,15 +665,43 @@ export default function BusTrip() {
                                   <DirectionsBusIcon sx={{ fontSize: { xs: 16, sm: 18, md: 20 }, color: "#6495ED" }} />
                                   {trip.bus?.busNumber || `ID: ${trip.busId}`}
                                 </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                  <Chip
+                                    label={trip.bus?.busType || '-'}
+                                    size="small"
+                                    sx={{ bgcolor: trip.bus?.busType ? '#e0e7ff' : '#f1f5f9', color: trip.bus?.busType ? '#4f46e5' : '#94a3b8', fontWeight: 500, fontSize: '0.55rem', height: '18px' }}
+                                  />
+                                  <Typography variant="caption" sx={{ fontSize: '0.55rem', color: '#64748b', display: 'flex', alignItems: 'center' }}>
+                                    Model: {trip.bus?.busModelName || '-'}
+                                  </Typography>
+                                </Box>
                               </Box>
                               <Chip label={trip.tripStatus} size="small" sx={{ bgcolor: getStatusColor(trip.tripStatus).bg, color: getStatusColor(trip.tripStatus).color, fontWeight: 600, fontSize: { xs: "0.55rem", sm: "0.6rem", md: "0.65rem" }, borderRadius: "6px", height: { xs: "20px", sm: "22px", md: "24px" }, flexShrink: 0 }} />
                             </Box>
                             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 1fr 1fr" }, gap: { xs: 1, sm: 1.5 }, mt: 1.5, pt: 1.5, borderTop: "1px solid #f1f5f9" }}>
                               <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>Bus ID</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" } }}>
+                                  {trip.busId || '-'}
+                                </Typography>
+                              </Box>
+                              <Box>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>Route</Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" }, display: 'flex', alignItems: 'center', gap: 0.5, wordBreak: 'break-word' }}>
                                   <RouteIcon sx={{ fontSize: { xs: 12, sm: 14 }, color: "#64748b" }} />
                                   {trip.route?.routeName || `ID: ${trip.routeId}`}
+                                </Typography>
+                              </Box>
+                              <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>Route ID</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" } }}>
+                                  #{trip.routeId || '-'}
+                                </Typography>
+                              </Box>
+                              <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>Service Provider</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.8rem" }, wordBreak: 'break-word' }}>
+                                  {trip.bus?.serviceProvider?.serviceprovidername || '-'}
                                 </Typography>
                               </Box>
                               <Box>
@@ -796,9 +741,9 @@ export default function BusTrip() {
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <ScheduleIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
                       <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                        {mobileSearchTerm ? `No trips found matching "${mobileSearchTerm}"` : "No trips added yet"}
+                        {trips.length === 0 ? "No trips added yet" : "No trips match your filters"}
                       </Typography>
-                      {!mobileSearchTerm && (
+                      {trips.length === 0 && (
                         <Button variant="outlined" startIcon={<AddIcon />} onClick={handleOpenDialog} sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                           Add first trip
                         </Button>
@@ -812,7 +757,7 @@ export default function BusTrip() {
         </ContentWrapper>
       </MainContent>
 
-      {/* Add Trip Dialog */}
+      {/* ================= ADD TRIP DIALOG ================= */}
       <StyledDialog open={open} onClose={handleCloseDialog} fullWidth maxWidth="md">
         <DialogTitle sx={{ fontWeight: 700, fontSize: { xs: "0.95rem", sm: "1.1rem", md: "1.25rem" }, color: "#1e293b", display: "flex", justifyContent: "space-between", alignItems: "center", pr: 0.5, p: { xs: 1.5, sm: 2, md: 2.5 } }}>
           Add New Trip
@@ -822,7 +767,7 @@ export default function BusTrip() {
         </DialogTitle>
         <DialogContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
           <Grid container spacing={isExtraSmall ? 1 : isMobile ? 1.5 : 2} sx={{ mt: 0 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <StyledAutocomplete
                 options={buses || []}
                 getOptionLabel={(b) => b?.busNumber || ""}
@@ -831,7 +776,7 @@ export default function BusTrip() {
                 renderInput={(params) => <StyledTextField {...params} label="Bus Number" fullWidth required size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} />}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <StyledAutocomplete
                 options={routes || []}
                 getOptionLabel={(r) => r?.routeName || String(r.id)}
@@ -840,7 +785,7 @@ export default function BusTrip() {
                 renderInput={(params) => <StyledTextField {...params} label="Route" fullWidth required size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} />}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <StyledAutocomplete
                 options={drivers || []}
                 getOptionLabel={(d) => d?.empId ? `${d.empId} - ${d.name}` : d?.name || ""}
@@ -849,7 +794,7 @@ export default function BusTrip() {
                 renderInput={(params) => <StyledTextField {...params} label="Driver" fullWidth required size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} />}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <StyledAutocomplete
                 options={conductors || []}
                 getOptionLabel={(c) => c?.empId ? `${c.empId} - ${c.name}` : c?.name || ""}
@@ -859,12 +804,45 @@ export default function BusTrip() {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <StyledTextField fullWidth type="datetime-local" label="Start Time" required InputLabelProps={{ shrink: true }} value={formData.startTime} onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} disabled={submitting} size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} />
+              <StyledTextField
+                fullWidth
+                type="datetime-local"
+                label="Start Time"
+                required
+                InputLabelProps={{ shrink: true }}
+                value={formData.startTime}
+                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                disabled={submitting}
+                size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AccessTimeIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />
+                    </InputAdornment>
+                  )
+                }}
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <StyledTextField fullWidth type="datetime-local" label="End Time (Optional)" InputLabelProps={{ shrink: true }} value={formData.endTime} onChange={(e) => setFormData({ ...formData, endTime: e.target.value })} disabled={submitting} size={isExtraSmall ? "small" : isMobile ? "small" : "medium"} />
+              <StyledTextField
+                fullWidth
+                type="datetime-local"
+                label="End Time (Optional)"
+                InputLabelProps={{ shrink: true }}
+                value={formData.endTime}
+                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                disabled={submitting}
+                size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AccessTimeIcon sx={{ color: '#94a3b8', fontSize: isExtraSmall ? 16 : 20 }} />
+                    </InputAdornment>
+                  )
+                }}
+              />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <StyledTextField select fullWidth label="Trip Status" required value={formData.tripStatus} onChange={(e) => setFormData({ ...formData, tripStatus: e.target.value })} disabled={submitting} size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}>
                 <MenuItem value="">Select Status</MenuItem>
                 {statusOptions.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}

@@ -1,5 +1,5 @@
 // src/pages/Driver/Driver.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -31,7 +31,11 @@ import {
   Grid,
   InputAdornment,
   TableContainer as MuiTableContainer,
-  Avatar
+  Avatar,
+  InputLabel,
+  FormControl,
+  Select,
+  OutlinedInput
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -45,7 +49,8 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import DriveEtaIcon from "@mui/icons-material/DriveEta";
 import EmailIcon from "@mui/icons-material/Email";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
-import SearchIcon from "@mui/icons-material/Search";          // <-- added
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { styled } from "@mui/material/styles";
 import driverApi from "../../api/driverApi";
 
@@ -90,7 +95,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
-// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 280px)",
   minHeight: "400px",
@@ -152,7 +156,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
-// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
   borderRadius: "10px",
   padding: "6px 16px",
@@ -170,7 +173,6 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
 }));
 
-// ---- Inline Stats (adjustable size) ----
 const InlineStats = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -198,54 +200,6 @@ const InlineStats = styled(Box)(({ theme }) => ({
     '&.suspended .num': { color: "#d97706" },
     '&.terminated .num': { color: "#dc2626" },
   }
-}));
-
-// ---- Filter input (white background, tiny) ----
-const FilterInput = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#ffffff',
-    borderRadius: '4px',
-    color: '#1e293b',
-    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-    '&:hover fieldset': { borderColor: '#6495ED' },
-    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
-    '& input': {
-      padding: '2px 6px',
-      fontSize: '0.6rem',
-      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
-      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
-      '&::placeholder': {
-        color: 'rgba(0,0,0,0.4)',
-        opacity: 1
-      }
-    }
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: '2px',
-    '& svg': {
-      fontSize: '0.7rem',
-      color: '#94a3b8'
-    }
-  },
-  width: '100%',
-  minWidth: '40px',
-}));
-
-// ---- Mobile search field ----
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    '&:hover fieldset': { borderColor: "#6495ED" },
-    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
-    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
-  },
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -290,7 +244,6 @@ export default function Driver() {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isExtraSmall = useMediaQuery('(max-width: 380px)');
 
-  // License Type Options
   const licenseTypeOptions = [
     { value: 'LMV', label: 'LMV - Light Motor Vehicle' },
     { value: 'LMV-TR', label: 'LMV-TR - Light Motor Vehicle – Transport' },
@@ -328,26 +281,6 @@ export default function Driver() {
   };
 
   const [drivers, setDrivers] = useState([]);
-  const [filteredDrivers, setFilteredDrivers] = useState([]);
-  // ---- Per‑column filters (desktop) ----
-  const [filters, setFilters] = useState({
-    id: "",
-    name: "",
-    phone: "",
-    email: "",
-    licenseNumber: "",
-    licenseType: "",
-    licenseExpiryDate: "",
-    experienceYears: "",
-    status: "",
-    joiningDate: "",
-    terminateDate: "",
-    city: "",
-    state: ""
-  });
-  // ---- Mobile global search ----
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
-
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -362,22 +295,24 @@ export default function Driver() {
     severity: "success"
   });
 
-  // ================= SORTING HELPER (descending ID) =================
+  // --- FILTER STATE ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterState, setFilterState] = useState('');
+  const [filterCity, setFilterCity] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
   const sortByIdDesc = (data) => [...data].sort((a, b) => b.id - a.id);
 
-  // ================= LOAD DRIVERS =================
   const loadDrivers = async () => {
     setLoading(true);
     try {
       const data = await driverApi.getAllDrivers();
       const sorted = sortByIdDesc(Array.isArray(data) ? data : []);
       setDrivers(sorted);
-      setFilteredDrivers(sorted);
     } catch (error) {
       console.error('Error fetching drivers:', error);
       showSnackbar(error.message || "Failed to load drivers", "error");
       setDrivers([]);
-      setFilteredDrivers([]);
     } finally {
       setLoading(false);
     }
@@ -387,59 +322,41 @@ export default function Driver() {
     loadDrivers();
   }, []);
 
-  // ================= FILTERING LOGIC =================
-  useEffect(() => {
-    let filtered = drivers;
-
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    filtered = filtered.filter(d =>
-      matches(d.id, filters.id) &&
-      matches(d.name, filters.name) &&
-      matches(d.phone, filters.phone) &&
-      matches(d.email, filters.email) &&
-      matches(d.licenseNumber, filters.licenseNumber) &&
-      matches(d.licenseType, filters.licenseType) &&
-      matches(d.licenseExpiryDate, filters.licenseExpiryDate) &&
-      matches(d.experienceYears, filters.experienceYears) &&
-      matches(d.status, filters.status) &&
-      matches(d.joiningDate, filters.joiningDate) &&
-      matches(d.terminateDate, filters.terminateDate) &&
-      matches(d.city, filters.city) &&
-      matches(d.state, filters.state)
-    );
-
-    // Mobile global search (extra)
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter(d =>
-        matches(d.id, term) ||
-        matches(d.name, term) ||
-        matches(d.phone, term) ||
-        matches(d.email, term) ||
-        matches(d.licenseNumber, term) ||
-        matches(d.licenseType, term) ||
-        matches(d.licenseExpiryDate, term) ||
-        matches(d.experienceYears, term) ||
-        matches(d.status, term) ||
-        matches(d.joiningDate, term) ||
-        matches(d.terminateDate, term) ||
-        matches(d.city, term) ||
-        matches(d.state, term)
-      );
-    }
-
-    setFilteredDrivers(filtered);
-  }, [drivers, filters, mobileSearchTerm, isMobile]);
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
+  // --- DERIVED FILTER OPTIONS ---
+  const states = useMemo(() => {
+    const unique = new Set(drivers.map(d => d.state).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [drivers]);
+
+  const cities = useMemo(() => {
+    const unique = new Set(drivers.map(d => d.city).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [drivers]);
+
+  const statusOptions = ['Join', 'Suspended', 'Terminated'];
+
+  // --- FILTERED DRIVERS ---
+  const filteredDrivers = useMemo(() => {
+    return drivers.filter(driver => {
+      const matchesSearch =
+        driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        driver.phone.includes(searchQuery) ||
+        (driver.email && driver.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        driver.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesState = filterState === '' || driver.state === filterState;
+      const matchesCity = filterCity === '' || driver.city === filterCity;
+      const matchesStatus = filterStatus === '' || driver.status === filterStatus;
+
+      return matchesSearch && matchesState && matchesCity && matchesStatus;
+    });
+  }, [drivers, searchQuery, filterState, filterCity, filterStatus]);
+
+  // --- HANDLERS ---
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -457,15 +374,6 @@ export default function Driver() {
       });
     };
     reader.readAsDataURL(file);
-  };
-
-  // Filter handlers
-  const handleFilterChange = (field) => (e) => {
-    setFilters(prev => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
   };
 
   const handleAddOpen = () => {
@@ -583,13 +491,11 @@ export default function Driver() {
         result = await driverApi.createDriver(payload);
         const updated = sortByIdDesc([...drivers, result]);
         setDrivers(updated);
-        setFilteredDrivers(updated);
         showSnackbar("Driver added successfully!", "success");
       } else {
         result = await driverApi.updateDriver(selectedId, payload);
         const updated = sortByIdDesc(drivers.map(d => d.id === selectedId ? result : d));
         setDrivers(updated);
-        setFilteredDrivers(updated);
         showSnackbar("Driver updated successfully!", "success");
       }
       handleCloseDialog();
@@ -609,7 +515,6 @@ export default function Driver() {
       await driverApi.deleteDriver(selectedId);
       const updated = sortByIdDesc(drivers.filter(d => d.id !== selectedId));
       setDrivers(updated);
-      setFilteredDrivers(updated);
       showSnackbar("Driver deleted successfully!", "success");
       setConfirmOpen(false);
       handleCloseDialog();
@@ -639,7 +544,15 @@ export default function Driver() {
     } catch { return dateString; }
   };
 
-  // ================= RENDER FORM =================
+  // --- CLEAR ALL FILTERS ---
+  const clearFilters = () => {
+    setSearchQuery('');
+    setFilterState('');
+    setFilterCity('');
+    setFilterStatus('');
+  };
+
+  // ================= RENDER FORM (UPDATED: DATE TYPE REMOVED) =================
   const renderForm = () => (
     <Grid container spacing={isExtraSmall ? 1 : isMobile ? 1.5 : 2} sx={{ mt: 0 }}>
       {Object.keys(emptyForm)
@@ -698,7 +611,7 @@ export default function Driver() {
               <StyledTextField
                 label={label}
                 name={k}
-                type={isPassword ? "password" : isDate ? "date" : isEmail ? "email" : "text"}
+                type={isPassword ? "password" : isEmail ? "email" : "text"}
                 value={form[k] || ""}
                 onChange={handleChange}
                 disabled={!editMode || submitting}
@@ -710,7 +623,7 @@ export default function Driver() {
                     <InputAdornment position="start">{getIcon()}</InputAdornment>
                   ) : null
                 }}
-                placeholder={!isDate && !isPassword ? `Enter ${label.toLowerCase()}` : ""}
+                placeholder={isDate ? "YYYY-MM-DD" : (!isPassword ? `Enter ${label.toLowerCase()}` : "")}
                 size={isExtraSmall ? "small" : isMobile ? "small" : "medium"}
               />
             </Grid>
@@ -788,42 +701,148 @@ export default function Driver() {
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header with inline stats and smaller Add button */}
+          {/* Header with stats, search box, and Add button */}
           <Box sx={{ 
             display: "flex", 
             flexDirection: { xs: "column", sm: "row" }, 
             justifyContent: "space-between", 
             alignItems: { xs: "stretch", sm: "center" }, 
-            gap: { xs: 1, sm: 2 }, 
+            gap: { xs: 1.5, sm: 2 }, 
             mb: { xs: 2, sm: 2 } 
           }}>
-            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: { xs: 1, sm: 2 } }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PersonIcon sx={{ color: "#6495ED", fontSize: { xs: 20, sm: 24, md: 28 } }} />
-                <Typography variant="h6" component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1rem", sm: "1.2rem", md: "1.4rem" }, color: "#1e293b" }}>
-                  Drivers
-                </Typography>
-              </Box>
-              {/* Inline stats */}
+            {/* Left side: stats + search */}
+            <Box sx={{ 
+              display: "flex", 
+              flexDirection: { xs: "column", sm: "row" }, 
+              alignItems: { xs: "stretch", sm: "center" }, 
+              flexWrap: "wrap", 
+              gap: { xs: 1, sm: 2 },
+              flex: 1
+            }}>
               <InlineStats>
                 <span className="stat-chip">Total <span className="num">{drivers.length}</span></span>
                 <span className="stat-chip active">Active <span className="num">{drivers.filter(d => d.status === 'Join').length}</span></span>
                 <span className="stat-chip suspended">Suspended <span className="num">{drivers.filter(d => d.status === 'Suspended').length}</span></span>
                 <span className="stat-chip terminated">Terminated <span className="num">{drivers.filter(d => d.status === 'Terminated').length}</span></span>
               </InlineStats>
+
+              {/* Search Input - placed before Add button */}
+              <TextField
+                placeholder="Search drivers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                size="small"
+                sx={{
+                  minWidth: { xs: '100%', sm: '200px' },
+                  maxWidth: { xs: '100%', sm: '260px' },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '10px',
+                    backgroundColor: 'white',
+                    '& fieldset': { borderColor: '#e2e8f0' },
+                    '&:hover fieldset': { borderColor: '#6495ED' },
+                    '&.Mui-focused fieldset': { borderColor: '#6495ED' }
+                  }
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchQuery && (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setSearchQuery('')} sx={{ p: 0.5 }}>
+                        <ClearIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
             </Box>
+
+            {/* Add Button */}
             <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={handleAddOpen}>
               Add Driver
             </AddButton>
+          </Box>
+
+          {/* Filter Bar (above table) */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            alignItems: { xs: 'stretch', sm: 'center' }, 
+            gap: 2, 
+            mb: 2,
+            p: { xs: 1, sm: 1.5 },
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            flexWrap: 'wrap'
+          }}>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>State</InputLabel>
+              <Select
+                value={filterState}
+                onChange={(e) => setFilterState(e.target.value)}
+                input={<OutlinedInput label="State" />}
+              >
+                <MenuItem value="">All States</MenuItem>
+                {states.map(state => (
+                  <MenuItem key={state} value={state}>{state}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>City</InputLabel>
+              <Select
+                value={filterCity}
+                onChange={(e) => setFilterCity(e.target.value)}
+                input={<OutlinedInput label="City" />}
+              >
+                <MenuItem value="">All Cities</MenuItem>
+                {cities.map(city => (
+                  <MenuItem key={city} value={city}>{city}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '140px' }, flex: 1 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                input={<OutlinedInput label="Status" />}
+              >
+                <MenuItem value="">All Statuses</MenuItem>
+                {statusOptions.map(status => (
+                  <MenuItem key={status} value={status}>{status}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Button 
+              variant="text" 
+              onClick={clearFilters} 
+              size="small" 
+              sx={{ 
+                color: '#64748b', 
+                textTransform: 'none',
+                fontWeight: 500,
+                '&:hover': { backgroundColor: 'transparent', color: '#1e293b' }
+              }}
+              startIcon={<ClearIcon sx={{ fontSize: 18 }} />}
+            >
+              Clear
+            </Button>
           </Box>
 
           {/* Table/List View */}
           <StyledPaper>
             {isDesktop ? (
               <StyledTableContainer>
-                <Table stickyHeader sx={{ minWidth: 1400 }}>  {/* force horizontal scroll */}
+                <Table stickyHeader sx={{ minWidth: 1400 }}>
                   <GradientHeader>
-                    {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
                       <TableCell sx={{ minWidth: '150px' }}>Name</TableCell>
@@ -838,48 +857,6 @@ export default function Driver() {
                       <TableCell sx={{ minWidth: '110px' }}>Terminated</TableCell>
                       <TableCell sx={{ minWidth: '120px' }}>City</TableCell>
                       <TableCell sx={{ minWidth: '100px' }}>State</TableCell>
-                    </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Name" value={filters.name} onChange={handleFilterChange('name')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Phone" value={filters.phone} onChange={handleFilterChange('phone')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Email" value={filters.email} onChange={handleFilterChange('email')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter License" value={filters.licenseNumber} onChange={handleFilterChange('licenseNumber')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Type" value={filters.licenseType} onChange={handleFilterChange('licenseType')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Exp" value={filters.licenseExpiryDate} onChange={handleFilterChange('licenseExpiryDate')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Exp" value={filters.experienceYears} onChange={handleFilterChange('experienceYears')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Status" value={filters.status} onChange={handleFilterChange('status')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Joining" value={filters.joiningDate} onChange={handleFilterChange('joiningDate')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Term" value={filters.terminateDate} onChange={handleFilterChange('terminateDate')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter City" value={filters.city} onChange={handleFilterChange('city')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter State" value={filters.state} onChange={handleFilterChange('state')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
@@ -906,13 +883,11 @@ export default function Driver() {
                         <TableCell colSpan={13} align="center" sx={{ py: 4 }}>
                           <Typography variant="body1" color="text.secondary">
                             <PersonIcon sx={{ fontSize: 40, display: 'block', margin: '0 auto 8px', opacity: 0.3 }} />
-                            {Object.values(filters).some(f => f) ? "No drivers match your filters" : "No drivers added yet"}
+                            No drivers match your filters
                           </Typography>
-                          {!Object.values(filters).some(f => f) && (
-                            <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2, borderRadius: "10px", textTransform: "none" }}>
-                              Add your first driver
-                            </Button>
-                          )}
+                          <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2, borderRadius: "10px", textTransform: "none" }}>
+                            Add a new driver
+                          </Button>
                         </TableCell>
                       </TableRow>
                     )}
@@ -920,23 +895,7 @@ export default function Driver() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile Card View with global search
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
                   {filteredDrivers.length > 0 ? (
                     filteredDrivers.map(d => (
@@ -963,14 +922,10 @@ export default function Driver() {
                   ) : (
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <PersonIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
-                      <Typography variant="body1" color="text.secondary">
-                        {mobileSearchTerm ? `No drivers found matching "${mobileSearchTerm}"` : "No drivers added yet"}
-                      </Typography>
-                      {!mobileSearchTerm && (
-                        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
-                          Add first driver
-                        </Button>
-                      )}
+                      <Typography variant="body1" color="text.secondary">No drivers match your filters</Typography>
+                      <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddOpen} sx={{ mt: 2 }}>
+                        Add new driver
+                      </Button>
                     </Box>
                   )}
                 </Stack>

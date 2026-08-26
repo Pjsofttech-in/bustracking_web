@@ -1,5 +1,5 @@
 // src/pages/Medium/Medium.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Button,
@@ -29,14 +29,19 @@ import {
   Grow,
   Tooltip,
   InputAdornment,
-  TableContainer as MuiTableContainer
+  TableContainer as MuiTableContainer,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  OutlinedInput
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import LanguageIcon from "@mui/icons-material/Language";
 import TranslateIcon from "@mui/icons-material/Translate";
-import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { styled } from "@mui/material/styles";
 
 import mediumApi from "../../api/mediumApi";
@@ -82,7 +87,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   '@media (max-width: 380px)': { borderRadius: "6px", margin: "0 -2px" }
 }));
 
-// ---- Table container with horizontal scroll ----
 const StyledTableContainer = styled(MuiTableContainer)(({ theme }) => ({
   maxHeight: "calc(100vh - 400px)",
   minHeight: "300px",
@@ -143,7 +147,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& td:last-of-type': { paddingRight: "12px", [theme.breakpoints.down('sm')]: { paddingRight: "8px" }, [theme.breakpoints.down('xs')]: { paddingRight: "6px" } }
 }));
 
-// ---- Smaller Add Button ----
 const AddButton = styled(Button)(({ theme }) => ({
   borderRadius: "10px",
   padding: "6px 16px",
@@ -161,7 +164,6 @@ const AddButton = styled(Button)(({ theme }) => ({
   '@media (max-width: 380px)': { padding: "4px 8px", fontSize: "0.65rem", borderRadius: "6px" }
 }));
 
-// ---- Inline Stats (adjustable size) ----
 const InlineStats = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -184,56 +186,9 @@ const InlineStats = styled(Box)(({ theme }) => ({
       fontWeight: 700,
       color: "#6495ED",
       marginLeft: "2px",
-    }
+    },
+    '&.active .num': { color: "#22c55e" },
   }
-}));
-
-// ---- Filter input (white background, tiny) ----
-const FilterInput = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#ffffff',
-    borderRadius: '4px',
-    color: '#1e293b',
-    '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-    '&:hover fieldset': { borderColor: '#6495ED' },
-    '&.Mui-focused fieldset': { borderColor: '#6495ED', borderWidth: '2px' },
-    '& input': {
-      padding: '2px 6px',
-      fontSize: '0.6rem',
-      [theme.breakpoints.down('md')]: { fontSize: '0.55rem', padding: '2px 5px' },
-      [theme.breakpoints.down('sm')]: { fontSize: '0.5rem', padding: '1px 4px' },
-      '&::placeholder': {
-        color: 'rgba(0,0,0,0.4)',
-        opacity: 1
-      }
-    }
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: '2px',
-    '& svg': {
-      fontSize: '0.7rem',
-      color: '#94a3b8'
-    }
-  },
-  width: '100%',
-  minWidth: '40px',
-}));
-
-// ---- Mobile search field ----
-const MobileSearchField = styled(TextField)(({ theme }) => ({
-  flex: 1,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: "10px",
-    backgroundColor: "#fff",
-    '&:hover fieldset': { borderColor: "#6495ED" },
-    '&.Mui-focused fieldset': { borderColor: "#6495ED", borderWidth: "2px" },
-    [theme.breakpoints.down('sm')]: { borderRadius: "8px" },
-    [theme.breakpoints.down('xs')]: { borderRadius: "6px" },
-  },
-  '& .MuiInputBase-input': {
-    [theme.breakpoints.down('sm')]: { fontSize: "0.85rem", padding: "10px 12px" },
-    [theme.breakpoints.down('xs')]: { fontSize: "0.75rem", padding: "8px 10px" },
-  },
 }));
 
 const MobileCard = styled(Card)(({ theme }) => ({
@@ -279,7 +234,6 @@ export default function Medium() {
 
   const [open, setOpen] = useState(false);
   const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
   const [form, setForm] = useState({ mediumName: "" });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -291,13 +245,8 @@ export default function Medium() {
     severity: "success"
   });
 
-  // ---- Per‑column filters (desktop) ----
-  const [filters, setFilters] = useState({
-    id: "",
-    mediumName: "",
-  });
-  // ---- Mobile global search ----
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
+  // ---- FILTER STATE ----
+  const [filterStatus, setFilterStatus] = useState('');
 
   // ================= SORTING HELPER (descending ID) =================
   const sortByIdDesc = (arr) => [...arr].sort((a, b) => b.id - a.id);
@@ -308,13 +257,13 @@ export default function Medium() {
     try {
       const response = await mediumApi.getAll();
       const sorted = sortByIdDesc(Array.isArray(response) ? response : []);
-      setData(sorted);
-      setFilteredData(sorted);
+      // Add status field (default ACTIVE)
+      const withStatus = sorted.map(item => ({ ...item, status: 'ACTIVE' }));
+      setData(withStatus);
     } catch (error) {
       console.error("Error fetching medium data", error);
       showSnackbar("Failed to load mediums", "error");
       setData([]);
-      setFilteredData([]);
     } finally {
       setLoading(false);
     }
@@ -324,49 +273,23 @@ export default function Medium() {
     loadData();
   }, []);
 
-  // ================= FILTERING LOGIC =================
-  useEffect(() => {
-    let filtered = data;
-
-    const matches = (val, filter) => {
-      if (!filter) return true;
-      if (val == null) return false;
-      return String(val).toLowerCase().includes(filter.toLowerCase());
-    };
-
-    filtered = filtered.filter((item) =>
-      matches(item.id, filters.id) &&
-      matches(item.mediumName, filters.mediumName)
-    );
-
-    // Mobile global search
-    if (isMobile && mobileSearchTerm.trim()) {
-      const term = mobileSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter((item) =>
-        matches(item.id, term) ||
-        matches(item.mediumName, term)
-      );
-    }
-
-    setFilteredData(filtered);
-  }, [data, filters, mobileSearchTerm, isMobile]);
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
+  };
+
+  // ================= FILTERED DATA =================
+  const filteredData = useMemo(() => {
+    if (!filterStatus) return data;
+    return data.filter(item => item.status === filterStatus);
+  }, [data, filterStatus]);
+
+  const clearFilters = () => {
+    setFilterStatus('');
   };
 
   // ================= HANDLE CHANGE =================
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  // ================= FILTER HANDLERS =================
-  const handleFilterChange = (field) => (e) => {
-    setFilters((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMobileSearchChange = (e) => {
-    setMobileSearchTerm(e.target.value);
   };
 
   // ================= HANDLE SUBMIT =================
@@ -380,9 +303,10 @@ export default function Medium() {
     try {
       const mediumData = { mediumName: form.mediumName.trim() };
       const newMedium = await mediumApi.create(mediumData);
-      const updated = sortByIdDesc([...data, newMedium]);
+      // Add status field (default ACTIVE)
+      const newWithStatus = { ...newMedium, status: 'ACTIVE' };
+      const updated = sortByIdDesc([...data, newWithStatus]);
       setData(updated);
-      setFilteredData(updated);
       showSnackbar("Medium Added Successfully", "success");
       setForm({ mediumName: "" });
       setOpen(false);
@@ -406,7 +330,6 @@ export default function Medium() {
       await mediumApi.delete(selectedMedium.id);
       const updated = sortByIdDesc(data.filter((item) => item.id !== selectedMedium.id));
       setData(updated);
-      setFilteredData(updated);
       showSnackbar("Medium Deleted Successfully", "success");
       setDeleteDialogOpen(false);
       setSelectedMedium(null);
@@ -415,6 +338,15 @@ export default function Medium() {
       showSnackbar(error.message || "Error Deleting Medium", "error");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // ================= HELPERS =================
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'ACTIVE': return { bg: '#dcfce7', color: '#16a34a' };
+      case 'INACTIVE': return { bg: '#fee2e2', color: '#dc2626' };
+      default: return { bg: '#f1f5f9', color: '#64748b' };
     }
   };
 
@@ -434,12 +366,13 @@ export default function Medium() {
     );
   }
 
-  // ================= RENDER =================
+  const activeCount = data.filter(item => item.status === 'ACTIVE').length;
+
   return (
     <PageContainer>
       <MainContent>
         <ContentWrapper>
-          {/* Header with inline stats and smaller Add button */}
+          {/* Header with inline stats, filter dropdown, and Add button */}
           <Box sx={{ 
             display: "flex", 
             flexDirection: { xs: "column", sm: "row" }, 
@@ -455,14 +388,50 @@ export default function Medium() {
                   Mediums
                 </Typography>
               </Box>
-              {/* Inline stats */}
               <InlineStats>
                 <span className="stat-chip">Total <span className="num">{data.length}</span></span>
+                <span className="stat-chip active">Active <span className="num">{activeCount}</span></span>
               </InlineStats>
             </Box>
-            <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={() => setOpen(true)}>
-              Add Medium
-            </AddButton>
+
+            {/* Filter dropdown + Add button - filter is BEFORE the Add button */}
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+              <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '130px' } }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  label="Status"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="ACTIVE">Active</MenuItem>
+                  <MenuItem value="INACTIVE">Inactive</MenuItem>
+                </Select>
+              </FormControl>
+
+              {filterStatus && (
+                <Button 
+                  variant="text" 
+                  onClick={clearFilters} 
+                  size="small" 
+                  sx={{ 
+                    color: '#64748b', 
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minWidth: 'auto',
+                    px: 1,
+                    '&:hover': { backgroundColor: 'transparent', color: '#1e293b' }
+                  }}
+                  startIcon={<ClearIcon sx={{ fontSize: 18 }} />}
+                >
+                  Clear
+                </Button>
+              )}
+
+              <AddButton variant="contained" startIcon={<AddIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />} onClick={() => setOpen(true)}>
+                Add Medium
+              </AddButton>
+            </Box>
           </Box>
 
           {/* Table/List View */}
@@ -471,27 +440,11 @@ export default function Medium() {
               <StyledTableContainer>
                 <Table stickyHeader sx={{ minWidth: 600 }}>
                   <GradientHeader>
-                    {/* Header row */}
                     <TableRow>
                       <TableCell sx={{ minWidth: '60px' }}>ID</TableCell>
                       <TableCell sx={{ minWidth: '200px' }}>Medium Name</TableCell>
                       <TableCell sx={{ minWidth: '100px' }} align="center">Status</TableCell>
                       <TableCell sx={{ minWidth: '100px' }} align="center">Actions</TableCell>
-                    </TableRow>
-                    {/* Filter row */}
-                    <TableRow>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter ID" value={filters.id} onChange={handleFilterChange('id')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <FilterInput size="small" placeholder="Filter Name" value={filters.mediumName} onChange={handleFilterChange('mediumName')} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: '0.7rem', color: '#94a3b8' }} /></InputAdornment> }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        {/* Status – no filter needed */}
-                      </TableCell>
-                      <TableCell sx={{ padding: '2px 4px', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        {/* Actions – empty */}
-                      </TableCell>
                     </TableRow>
                   </GradientHeader>
                   <TableBody>
@@ -508,7 +461,19 @@ export default function Medium() {
                             </Box>
                           </TableCell>
                           <TableCell align="center">
-                            <Chip label="Active" size="small" sx={{ backgroundColor: "#dcfce7", color: "#16a34a", fontWeight: 600, fontSize: { xs: "0.45rem", sm: "0.55rem", md: "0.7rem" }, borderRadius: "6px", height: { xs: "16px", sm: "18px", md: "24px" }, minWidth: { xs: "45px", sm: "55px", md: "70px" } }} />
+                            <Chip 
+                              label={row.status}
+                              size="small"
+                              sx={{
+                                backgroundColor: getStatusColor(row.status).bg,
+                                color: getStatusColor(row.status).color,
+                                fontWeight: 600,
+                                fontSize: { xs: "0.45rem", sm: "0.55rem", md: "0.7rem" },
+                                borderRadius: "6px",
+                                height: { xs: "16px", sm: "18px", md: "24px" },
+                                minWidth: { xs: "45px", sm: "55px", md: "70px" }
+                              }}
+                            />
                           </TableCell>
                           <TableCell align="center">
                             <Tooltip title="Delete">
@@ -524,9 +489,9 @@ export default function Medium() {
                         <TableCell colSpan={4} align="center" sx={{ py: { xs: 3, sm: 4, md: 6 } }}>
                           <Typography variant="body1" color="text.secondary">
                             <TranslateIcon sx={{ fontSize: { xs: 30, sm: 40 }, display: "block", margin: "0 auto 8px", opacity: 0.3 }} />
-                            {Object.values(filters).some(f => f) ? "No mediums match your filters" : "No mediums added yet"}
+                            {data.length === 0 ? "No mediums added yet" : "No mediums match the filter"}
                           </Typography>
-                          {!Object.values(filters).some(f => f) && (
+                          {data.length === 0 && (
                             <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpen(true)} sx={{ mt: 2, borderRadius: "10px", textTransform: "none", borderColor: "#6495ED", color: "#6495ED", fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                               Add your first medium
                             </Button>
@@ -538,23 +503,7 @@ export default function Medium() {
                 </Table>
               </StyledTableContainer>
             ) : (
-              // Mobile/Tablet Card View with global search
               <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-                <MobileSearchField
-                  fullWidth
-                  placeholder="Search all fields..."
-                  value={mobileSearchTerm}
-                  onChange={handleMobileSearchChange}
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment>,
-                    endAdornment: mobileSearchTerm && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setMobileSearchTerm('')}><CloseIcon fontSize="small" /></IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Stack spacing={1.5}>
                   {filteredData.length > 0 ? (
                     filteredData.map((row, index) => (
@@ -570,7 +519,18 @@ export default function Medium() {
                                 </Typography>
                               </Box>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                                <Chip label="Active" size="small" sx={{ backgroundColor: "#dcfce7", color: "#16a34a", fontWeight: 600, fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.65rem" }, borderRadius: "6px", height: { xs: "18px", sm: "20px", md: "24px" } }} />
+                                <Chip 
+                                  label={row.status}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: getStatusColor(row.status).bg,
+                                    color: getStatusColor(row.status).color,
+                                    fontWeight: 600,
+                                    fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.65rem" },
+                                    borderRadius: "6px",
+                                    height: { xs: "18px", sm: "20px", md: "24px" }
+                                  }}
+                                />
                                 <Tooltip title="Delete">
                                   <IconButton color="error" onClick={() => handleDeleteClick(row)} size={isExtraSmall ? "small" : "medium"} sx={{ borderRadius: "10px", padding: { xs: "4px", sm: "6px" }, transition: "all 0.2s ease", '&:hover': { backgroundColor: "#fee2e2" } }}>
                                     <DeleteIcon sx={{ fontSize: { xs: 14, sm: 16, md: 18 } }} />
@@ -585,7 +545,9 @@ export default function Medium() {
                               </Box>
                               <Box>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: "0.5rem", sm: "0.55rem", md: "0.6rem" } }}>Status</Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.85rem" }, color: "#16a34a" }}>Active</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: { xs: "0.65rem", sm: "0.75rem", md: "0.85rem" }, color: getStatusColor(row.status).color }}>
+                                  {row.status}
+                                </Typography>
                               </Box>
                             </Box>
                           </CardContent>
@@ -596,9 +558,9 @@ export default function Medium() {
                     <Box sx={{ textAlign: "center", py: { xs: 3, sm: 4 } }}>
                       <TranslateIcon sx={{ fontSize: { xs: 36, sm: 48 }, opacity: 0.2, mb: 2 }} />
                       <Typography variant="body1" color="text.secondary">
-                        {mobileSearchTerm ? `No mediums found matching "${mobileSearchTerm}"` : "No mediums added yet"}
+                        {data.length === 0 ? "No mediums added yet" : "No mediums match the filter"}
                       </Typography>
-                      {!mobileSearchTerm && (
+                      {data.length === 0 && (
                         <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpen(true)} sx={{ mt: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                           Add first medium
                         </Button>
