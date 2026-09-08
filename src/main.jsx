@@ -11,7 +11,7 @@ import.meta.env.MODE === 'production'
   : '/';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <BrowserRouter basename={basename}>
+  <BrowserRouter basename="/bustracking">
     <App />
   </BrowserRouter>
 );
