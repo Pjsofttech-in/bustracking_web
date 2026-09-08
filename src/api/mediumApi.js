@@ -1,5 +1,5 @@
 // src/api/mediumApi.js
-import api from 'axios';
+import api from "./axios";
 
 
 // Response interceptor (optional – for error handling)

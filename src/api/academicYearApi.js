@@ -1,5 +1,5 @@
 // src/api/academicYearApi.js
-import api from "axios";
+import api from "./axios";
 
 // ============ ACADEMIC YEAR CRUD ============
 

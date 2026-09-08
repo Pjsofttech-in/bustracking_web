@@ -1,5 +1,5 @@
 // src/api/busApi.js
-import api from 'axios';
+import api from "./axios";
 
 // ============ Bus CRUD ============
 export const getAllBuses = async () => {

@@ -1,5 +1,5 @@
 // src/api/authApi.js
-import api from 'axios';
+import api from "./axios";
 
 
 export const login = async (credentials) => {

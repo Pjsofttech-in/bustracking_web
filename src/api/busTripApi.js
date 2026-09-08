@@ -1,5 +1,5 @@
 // src/api/busTripApi.js
-import api from 'axios';
+import api from "./axios";
 
 
 // ============ BUS TRIP CRUD ============

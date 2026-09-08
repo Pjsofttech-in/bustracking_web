@@ -1,5 +1,5 @@
 // src/api/busStopApi.js
-import api from 'axios';
+import api from "./axios";
 
 export const getAll = async () => {
   const response = await api.get("/bus-stops");

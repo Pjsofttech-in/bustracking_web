@@ -1,5 +1,5 @@
 // src/api/conductorApi.js
-import api from 'axios';
+import api from "./axios";
 
 // ============ CONDUCTOR CRUD ============
 export const getAllConductors = async () => {

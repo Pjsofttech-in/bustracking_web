@@ -1,4 +1,4 @@
-import api from 'axios';
+import api from "./axios";
 
 export const getLatestLocation = async (busId) => {
   const response = await api.get(`/bus-locations/bus/${busId}/latest`);

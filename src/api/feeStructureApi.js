@@ -1,5 +1,5 @@
 // src/api/feeStructureApi.js
-import api from 'axios';
+import api from "./axios";
 
 
 

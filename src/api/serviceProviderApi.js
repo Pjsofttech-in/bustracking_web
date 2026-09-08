@@ -1,5 +1,5 @@
 // src/api/serviceProviderApi.js
-import api from "axios";
+import api from "./axios";
 
 // ============ Service Provider CRUD ============
 export const getAllServiceProviders = async () => {

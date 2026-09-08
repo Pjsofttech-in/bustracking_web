@@ -1,5 +1,5 @@
 // src/api/divisionApi.js
-import api from 'axios';
+import api from "./axios";
 
 // ============ DIVISION CRUD ============
 

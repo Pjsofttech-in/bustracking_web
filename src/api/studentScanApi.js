@@ -1,5 +1,5 @@
 // src/api/studentScanApi.js
-import api from 'axios';
+import api from "./axios";
 
 
 // ============ STUDENT SCAN CRUD ============

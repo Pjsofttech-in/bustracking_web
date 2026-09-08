@@ -1,5 +1,5 @@
 // src/api/busRouteApi.js
-import api from 'axios';
+import api from "./axios";
 
 // ============ BUS ROUTE CRUD ============
 // Note: The payload (data) for create/update no longer includes busId, driverId, or conductorId.
