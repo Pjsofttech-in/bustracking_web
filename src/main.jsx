@@ -5,15 +5,12 @@ import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 
 
-  const basename =
-  import.meta.env.MODE === 'production'
-    ? '/bustracking'
-    : '/';
+const basename =
+import.meta.env.MODE === 'production'
+  ? '/bustracking'
+  : '/';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  // <BrowserRouter>
-  //   <App />
-  // </BrowserRouter>
   <BrowserRouter basename={basename}>
     <App />
   </BrowserRouter>
