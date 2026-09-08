@@ -1,21 +1,6 @@
 // src/api/studentFeePaymentApi.js
-import axios from "axios";
+import api from 'axios';
 
-const BASE_URL = ""; // proxy handles it
-
-const api = axios.create({
-  baseURL: BASE_URL,
-  timeout: 30000,
-  headers: { "Content-Type": "application/json" },
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error("API Error:", error);
-    return Promise.reject(error);
-  }
-);
 
 
 // ============ STUDENT FEE PAYMENT CRUD ============

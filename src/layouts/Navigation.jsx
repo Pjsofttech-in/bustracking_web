@@ -1,11 +1,25 @@
-import React, { useState } from "react";
-import { lazy, Suspense } from "react";
+// src/layouts/Navigation.jsx
+import React, { useState, lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
+import { logout } from "../api/authApi";
 import {
-  Box, Paper, Tabs, Tab, Drawer,
-  List, ListItemButton, ListItemText, Typography,
-  useTheme, useMediaQuery, IconButton, AppBar, Toolbar,
-  Collapse, ListSubheader
+  Box,
+  Paper,
+  Tabs,
+  Tab,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemText,
+  Typography,
+  useTheme,
+  useMediaQuery,
+  IconButton,
+  AppBar,
+  Toolbar,
+  Collapse,
 } from "@mui/material";
+import { keyframes } from "@mui/system";
 
 // Lazy imports
 const ServiceProvider = lazy(() => import("../pages/ServiceProvider/Serviceprovider"));
@@ -24,19 +38,19 @@ const Medium = lazy(() => import("../pages/Student/Medium"));
 const Division = lazy(() => import("../pages/Student/Division"));
 const Scan = lazy(() => import("../pages/Student/Scan"));
 const StudentFeePayment = lazy(() => import("../pages/Student/StudentFeePayment"));
-
+const FeeStructureManagement = lazy(() => import("../pages/FeeStructure/FeeStructureManagement"));
 
 // Icons
 import MenuIcon from "@mui/icons-material/Menu";
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import DashboardIcon from "@mui/icons-material/Dashboard";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import AltRouteIcon from "@mui/icons-material/AltRoute";
 import TransferWithinAStationIcon from "@mui/icons-material/TransferWithinAStation";
 import PersonIcon from "@mui/icons-material/Person";
 import AirlineSeatReclineNormalIcon from "@mui/icons-material/AirlineSeatReclineNormal";
-import MiscellaneousServicesIcon from '@mui/icons-material/MiscellaneousServices';
-import ClassIcon from '@mui/icons-material/Class';
+import MiscellaneousServicesIcon from "@mui/icons-material/MiscellaneousServices";
+import ClassIcon from "@mui/icons-material/Class";
 import GroupsIcon from "@mui/icons-material/Groups";
 import LanguageIcon from "@mui/icons-material/Language";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
@@ -45,8 +59,7 @@ import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import { keyframes } from "@mui/system";
-import FeeStructureManagement from "../pages/feeStructure/FeeStructureManagement";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const drawerWidth = 180;
 const miniWidth = 70;
@@ -60,9 +73,10 @@ const pulse = keyframes`
 `;
 
 export default function Navigation() {
+  const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
   const [tab, setTab] = useState(1);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -84,10 +98,23 @@ export default function Navigation() {
   };
 
   const toggleSection = (heading) => {
-    setExpandedSections(prev => ({ ...prev, [heading]: !prev[heading] }));
+    setExpandedSections((prev) => ({ ...prev, [heading]: !prev[heading] }));
   };
 
   const showArrowHint = (isMobile || isTablet) && settingsOpen;
+
+  const handleLogout = async () => {
+    try {
+      await logout(); // Call backend logout endpoint
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("roleId");
+      navigate("/login");
+    }
+  };
 
   const menuItemStyle = {
     borderRadius: 3,
@@ -103,8 +130,8 @@ export default function Navigation() {
       color: "#000",
       transform: "translateX(5px)",
       boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-      "& .MuiListItemIcon-root": { color: "#000" }
-    }
+      "& .MuiListItemIcon-root": { color: "#000" },
+    },
   };
 
   // ---------- Settings structure ----------
@@ -117,7 +144,7 @@ export default function Navigation() {
         { key: "busstop", icon: <TransferWithinAStationIcon />, label: "Bus Stop" },
         { key: "busroute", icon: <AltRouteIcon />, label: "Bus Route" },
         { key: "buslocation", icon: <LocationOnIcon />, label: "Bus Location" },
-      ]
+      ],
     },
     {
       heading: "Student",
@@ -128,35 +155,16 @@ export default function Navigation() {
         { key: "medium", icon: <LanguageIcon />, label: "Medium" },
         { key: "division", icon: <GroupsIcon />, label: "Division" },
         { key: "scan", icon: <QrCodeScannerIcon />, label: "QR Scan" },
-      ]
-    }
+      ],
+    },
   ];
 
-  // Standalone items (order: Service Provider, Driver, Conductor)
+  // Standalone items
   const standaloneItems = [
     { key: "service", icon: <MiscellaneousServicesIcon />, label: "Service Provider" },
     { key: "driver", icon: <AirlineSeatReclineNormalIcon />, label: "Driver" },
     { key: "conductor", icon: <PersonIcon />, label: "Conductor" },
   ];
-
-  // Helper to render a list of items (used in both mobile and desktop)
-  const renderItems = (items, isNested = false) =>
-    items.map(item => (
-      <ListItemButton
-        key={item.key}
-        onClick={() => openSettingsPage(item.key)}
-        sx={{
-          borderRadius: 2,
-          mb: 0.5,
-          pl: isNested ? 4 : 2,
-          '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
-          ...(isNested && { ml: 2 }),
-        }}
-      >
-        {item.icon}
-        <ListItemText sx={{ ml: 2 }} primary={item.label} />
-      </ListItemButton>
-    ));
 
   // ---------- Mobile Drawer ----------
   const MobileDrawer = () => (
@@ -165,8 +173,8 @@ export default function Navigation() {
       open={mobileDrawerOpen}
       onClose={() => setMobileDrawerOpen(false)}
       sx={{
-        display: { xs: 'block', md: 'none' },
-        '& .MuiDrawer-paper': {
+        display: { xs: "block", md: "none" },
+        "& .MuiDrawer-paper": {
           width: 280,
           background: "linear-gradient(180deg, #6495ED 100%, #4169E1 100%)",
           color: "#fff",
@@ -175,7 +183,7 @@ export default function Navigation() {
       }}
     >
       <Box sx={{ p: 2, fontWeight: "bold", fontSize: 18 }}>
-        <DashboardIcon sx={{ fontSize: 18, mr: 1 }} /> Main 
+        <DashboardIcon sx={{ fontSize: 18, mr: 1 }} /> Main
       </Box>
       <List>
         <ListItemButton sx={{ borderRadius: 2, mb: 1 }}>
@@ -186,14 +194,13 @@ export default function Navigation() {
         Settings
       </Typography>
       <List>
-        {/* 1. Sections (Bus, Student) first */}
-        {settingsSections.map(section => {
+        {settingsSections.map((section) => {
           const isExpanded = expandedSections[section.heading] || false;
           return (
             <React.Fragment key={section.heading}>
               <ListItemButton
                 onClick={() => toggleSection(section.heading)}
-                sx={{ borderRadius: 2, mb: 0.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+                sx={{ borderRadius: 2, mb: 0.5, "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } }}
               >
                 {section.icon}
                 <ListItemText sx={{ ml: 2 }} primary={section.heading} />
@@ -201,7 +208,7 @@ export default function Navigation() {
               </ListItemButton>
               <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  {section.items.map(item => (
+                  {section.items.map((item) => (
                     <ListItemButton
                       key={item.key}
                       onClick={() => openSettingsPage(item.key)}
@@ -209,7 +216,7 @@ export default function Navigation() {
                         pl: 4,
                         borderRadius: 2,
                         mb: 0.5,
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                        "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
                       }}
                     >
                       {item.icon}
@@ -221,17 +228,23 @@ export default function Navigation() {
             </React.Fragment>
           );
         })}
-        {/* 2. Standalone items after sections */}
-        {standaloneItems.map(item => (
+        {standaloneItems.map((item) => (
           <ListItemButton
             key={item.key}
             onClick={() => openSettingsPage(item.key)}
-            sx={{ borderRadius: 2, mb: 0.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            sx={{ borderRadius: 2, mb: 0.5, "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } }}
           >
             {item.icon}
             <ListItemText sx={{ ml: 2 }} primary={item.label} />
           </ListItemButton>
         ))}
+      </List>
+      {/* Logout at bottom of mobile drawer */}
+      <List sx={{ mt: "auto" }}>
+        <ListItemButton onClick={handleLogout} sx={{ borderRadius: 2, color: "#fff", "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } }}>
+          <LogoutIcon sx={{ mr: 1 }} />
+          <ListItemText primary="Logout" />
+        </ListItemButton>
       </List>
     </Drawer>
   );
@@ -253,20 +266,16 @@ export default function Navigation() {
         overflow: "scroll",
         boxShadow: "4px 0 12px rgba(0,0,0,0.15)",
         zIndex: 1,
-        display: { xs: 'none', md: 'block' },
+        display: { xs: "none", md: "block" },
         p: hoverOpen ? 1 : 0.5,
       }}
     >
       <List sx={{ display: "flex", flexDirection: "column", gap: hoverOpen ? 0.3 : 0.3 }}>
-        {/* 1. Sections (Bus, Student) first */}
-        {settingsSections.map(section => {
+        {settingsSections.map((section) => {
           const isExpanded = expandedSections[section.heading] || false;
           return (
             <React.Fragment key={section.heading}>
-              <ListItemButton
-                sx={menuItemStyle}
-                onClick={() => toggleSection(section.heading)}
-              >
+              <ListItemButton sx={menuItemStyle} onClick={() => toggleSection(section.heading)}>
                 {section.icon}
                 {hoverOpen && (
                   <>
@@ -278,14 +287,10 @@ export default function Navigation() {
               {hoverOpen && (
                 <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding>
-                    {section.items.map(item => (
+                    {section.items.map((item) => (
                       <ListItemButton
                         key={item.key}
-                        sx={{
-                          ...menuItemStyle,
-                          pl: 3,
-                          py: 0.8,
-                        }}
+                        sx={{ ...menuItemStyle, pl: 3, py: 0.8 }}
                         onClick={() => openSettingsPage(item.key)}
                       >
                         {item.icon}
@@ -298,13 +303,8 @@ export default function Navigation() {
             </React.Fragment>
           );
         })}
-        {/* 2. Standalone items after sections */}
-        {standaloneItems.map(item => (
-          <ListItemButton
-            key={item.key}
-            sx={menuItemStyle}
-            onClick={() => openSettingsPage(item.key)}
-          >
+        {standaloneItems.map((item) => (
+          <ListItemButton key={item.key} sx={menuItemStyle} onClick={() => openSettingsPage(item.key)}>
             {item.icon}
             {hoverOpen && <ListItemText sx={{ ml: 2 }} primary={item.label} />}
           </ListItemButton>
@@ -320,7 +320,7 @@ export default function Navigation() {
       <AppBar
         position="fixed"
         sx={{
-          display: { xs: 'block', md: 'none' },
+          display: { xs: "block", md: "none" },
           background: "linear-gradient(90deg, #6495ED 100%, #4169E1 100%)",
           zIndex: 1300,
         }}
@@ -335,6 +335,9 @@ export default function Navigation() {
           <Typography variant="caption" sx={{ opacity: 0.8 }}>
             {settingsPage || "Dashboard"}
           </Typography>
+          <IconButton color="inherit" onClick={handleLogout}>
+            <LogoutIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -344,7 +347,7 @@ export default function Navigation() {
       <Drawer
         variant="permanent"
         sx={{
-          display: { xs: 'none', md: 'block' },
+          display: { xs: "none", md: "block" },
           width: drawerWidth,
           "& .MuiDrawer-paper": {
             width: drawerWidth,
@@ -363,18 +366,26 @@ export default function Navigation() {
             <ListItemText primary="Bustracking system" />
           </ListItemButton>
         </List>
+        <List sx={{ mt: "auto" }}>
+          <ListItemButton onClick={handleLogout} sx={{ color: "#fff", "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } }}>
+            <LogoutIcon sx={{ mr: 1 }} />
+            <ListItemText primary="Logout" />
+          </ListItemButton>
+        </List>
       </Drawer>
 
       {/* Settings Mini Drawer - Desktop only */}
       {settingsOpen && !isMobile && <SettingsMiniDrawer />}
 
       {/* MAIN CONTENT */}
-      <Box sx={{
-        flexGrow: 1,
-        p: { xs: 1, sm: 2, md: 3 },
-        mt: { xs: '56px', md: 0 },
-        overflow: 'hidden'
-      }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          p: { xs: 1, sm: 2, md: 3 },
+          mt: { xs: "56px", md: 0 },
+          overflow: "hidden",
+        }}
+      >
         <Paper
           elevation={3}
           sx={{
@@ -382,7 +393,7 @@ export default function Navigation() {
             mb: { xs: 2, sm: 3, md: 3 },
             background: "linear-gradient(90deg, #6495ED 100%, #4169E1 100%)",
             p: { xs: 0.5, sm: 1 },
-            overflowX: 'auto',
+            overflowX: "auto",
           }}
         >
           <Tabs
@@ -393,7 +404,7 @@ export default function Navigation() {
             allowScrollButtonsMobile
             centered={!isMobile}
             sx={{
-              '& .MuiTabs-indicator': { display: 'none' },
+              "& .MuiTabs-indicator": { display: "none" },
               minHeight: { xs: 48, sm: 56 },
               "& .MuiTab-root": {
                 mx: { xs: 0.5, sm: 1, md: 7 },
@@ -404,8 +415,8 @@ export default function Navigation() {
                 fontWeight: 500,
                 textTransform: "none",
                 transition: "0.3s",
-                fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' },
-                minWidth: { xs: 'auto', sm: 'auto' },
+                fontSize: { xs: "0.7rem", sm: "0.8rem", md: "0.9rem" },
+                minWidth: { xs: "auto", sm: "auto" },
               },
               "& .MuiTab-root:hover": { bgcolor: "rgba(255,255,255,0.2)" },
               "& .Mui-selected": {
@@ -422,85 +433,93 @@ export default function Navigation() {
           </Tabs>
         </Paper>
 
-        {!settingsOpen && (
-          <Box sx={{
-            bgcolor: "#fff",
-            borderRadius: { xs: 2, sm: 3, md: 3 },
-            p: { xs: 1.5, sm: 2, md: 3 },
-            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-            overflow: 'auto',
-          }}>
-            {tab === 0 && <Dashboard/>}
-            {tab === 1 && <Student/>}
-            {tab === 2 && <StudentFeePayment/>}
-            {tab === 3 && <BusTrip/>}
-            {tab === 4 && <FeeStructureManagement/>}
-            
-            {tab === 5 && <Typography>Feedback Page</Typography>}
-          </Box>
-        )}
+        <Suspense fallback={<Box sx={{ p: 4, textAlign: "center" }}><Typography>Loading...</Typography></Box>}>
+          {!settingsOpen && (
+            <Box
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: { xs: 2, sm: 3, md: 3 },
+                p: { xs: 1.5, sm: 2, md: 3 },
+                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                overflow: "auto",
+              }}
+            >
+              {tab === 0 && <Dashboard />}
+              {tab === 1 && <Student />}
+              {tab === 2 && <StudentFeePayment />}
+              {tab === 3 && <BusTrip />}
+              {tab === 4 && <FeeStructureManagement />}
+              {tab === 5 && <Typography>Feedback Page</Typography>}
+            </Box>
+          )}
 
-        {settingsOpen && settingsPage && (
-          <Box sx={{
-            position: { xs: 'static', md: 'absolute' },
-            top: { md: 130 },
-            left: isMobile ? 0 : (settingsOpen ? drawerWidth + (hoverOpen ? fullWidth : miniWidth) + 25 + FORM_GAP : 0),
-            right: { xs: 0, md: 20 },
-            bottom: { xs: 0, md: 'auto' },
-            bgcolor: "#fff",
-            borderRadius: { xs: 2, sm: 3, md: 4 },
-            p: { xs: 1.5, sm: 2, md: 3 },
-            boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
-            zIndex: { xs: 1, md: 2 },
-            overflow: "auto",
-            maxHeight: { xs: 'calc(100vh - 120px)', md: "80vh" },
-            transition: "0.3s",
-            width: { xs: '100%', sm: 'calc(100% - 20px)', md: 'auto' },
-            mx: { xs: 1, sm: 2, md: 0 },
-          }}>
-            {settingsPage === "service" && <ServiceProvider />}
-            {settingsPage === "bus" && <Bus />}
-            {settingsPage === "driver" && <Driver />}
-            {settingsPage === "conductor" && <Conductor />}
-            {settingsPage === "busstop" && <BusStop />}
-            {settingsPage === "busroute" && <BusRoute />}
-            {settingsPage === "buslocation" && <BusLocation />}
-            {settingsPage === "class" && <Class/>}
-            {settingsPage === "academic" && <AcademicYear/>}
-            {settingsPage === "division" && <Division/>}
-            {settingsPage === "medium" && <Medium/>}
-            {settingsPage === "scan" && <Scan/>}
-          </Box>
-        )}
+          {settingsOpen && settingsPage && (
+            <Box
+              sx={{
+                position: { xs: "static", md: "absolute" },
+                top: { md: 130 },
+                left: isMobile ? 0 : settingsOpen ? drawerWidth + (hoverOpen ? fullWidth : miniWidth) + 25 + FORM_GAP : 0,
+                right: { xs: 0, md: 20 },
+                bottom: { xs: 0, md: "auto" },
+                bgcolor: "#fff",
+                borderRadius: { xs: 2, sm: 3, md: 4 },
+                p: { xs: 1.5, sm: 2, md: 3 },
+                boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+                zIndex: { xs: 1, md: 2 },
+                overflow: "auto",
+                maxHeight: { xs: "calc(100vh - 120px)", md: "80vh" },
+                transition: "0.3s",
+                width: { xs: "100%", sm: "calc(100% - 20px)", md: "auto" },
+                mx: { xs: 1, sm: 2, md: 0 },
+              }}
+            >
+              {settingsPage === "service" && <ServiceProvider />}
+              {settingsPage === "bus" && <Bus />}
+              {settingsPage === "driver" && <Driver />}
+              {settingsPage === "conductor" && <Conductor />}
+              {settingsPage === "busstop" && <BusStop />}
+              {settingsPage === "busroute" && <BusRoute />}
+              {settingsPage === "buslocation" && <BusLocation />}
+              {settingsPage === "class" && <Class />}
+              {settingsPage === "academic" && <AcademicYear />}
+              {settingsPage === "division" && <Division />}
+              {settingsPage === "medium" && <Medium />}
+              {settingsPage === "scan" && <Scan />}
+            </Box>
+          )}
+        </Suspense>
 
         {/* Arrow hint for mobile/tablet */}
         {showArrowHint && (
           <Box
             sx={{
-              position: 'fixed',
+              position: "fixed",
               top: 60,
               left: 10,
               zIndex: 1400,
-              display: 'flex',
-              alignItems: 'center',
+              display: "flex",
+              alignItems: "center",
               gap: 1,
               animation: `${pulse} 1.5s ease-in-out infinite`,
-              cursor: 'pointer',
+              cursor: "pointer",
             }}
             onClick={() => setMobileDrawerOpen(true)}
           >
-            <ArrowForwardIosIcon sx={{ fontSize: 24, color: '#f59e0b', transform: 'rotate(180deg)' }} />
-            <Typography variant="caption" sx={{
-              backgroundColor: 'rgba(0,0,0,0.7)',
-              color: '#fff',
-              px: 1.5,
-              py: 0.5,
-              borderRadius: 1,
-              fontWeight: 600,
-              fontSize: '0.7rem',
-              whiteSpace: 'nowrap',
-              backdropFilter: 'blur(4px)',
-            }}>
+            <ArrowForwardIosIcon sx={{ fontSize: 24, color: "#f59e0b", transform: "rotate(180deg)" }} />
+            <Typography
+              variant="caption"
+              sx={{
+                backgroundColor: "rgba(0,0,0,0.7)",
+                color: "#fff",
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 1,
+                fontWeight: 600,
+                fontSize: "0.7rem",
+                whiteSpace: "nowrap",
+                backdropFilter: "blur(4px)",
+              }}
+            >
               Tap ☰ to choose
             </Typography>
           </Box>

@@ -1,12 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';   // ← must be present
+import './index.css';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 
+
+  const basename =
+  import.meta.env.MODE === 'production'
+    ? '/bustracking'
+    : '/';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
+  // <BrowserRouter>
+  //   <App />
+  // </BrowserRouter>
+  <BrowserRouter basename={basename}>
     <App />
   </BrowserRouter>
 );
-

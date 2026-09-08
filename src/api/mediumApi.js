@@ -1,14 +1,8 @@
 // src/api/mediumApi.js
-import axios from "axios";
+import api from 'axios';
 
-const BASE_URL = ""; // proxy handles it
 
-const api = axios.create({
-  baseURL: BASE_URL,
-  timeout: 30000,
-  headers: { "Content-Type": "application/json" },
-});
-
+// Response interceptor (optional – for error handling)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -16,8 +10,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-
 // ============ MEDIUM CRUD ============
 
 export const getAllMediums = async () => {

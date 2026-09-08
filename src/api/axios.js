@@ -1,8 +1,8 @@
 // src/api/axios.js
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://pjsofttech.com/bustracking";
-// const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://pjsofttech.com/bustracking";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:9090";
 
 
 
