@@ -4,8 +4,6 @@ import axios from "axios";
 // const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://pjsofttech.com/bustracking";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:9090";
 
-
-
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 30000,
@@ -14,9 +12,16 @@ const api = axios.create({
   },
 });
 
-// Request interceptor for debugging
+// ✅ FIX: Request interceptor — always attach token from localStorage
 api.interceptors.request.use(
   (config) => {
+    // ✅ Safety net: if setAuthToken was never called (page refresh),
+    // pull the token straight from localStorage.
+    const token = localStorage.getItem("token");
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     console.log(`📤 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     if (config.data) {
       console.log("Request Data:", config.data);
@@ -29,7 +34,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for debugging
+// ✅ FIX: Response interceptor with proper 401/403 handling
 api.interceptors.response.use(
   (response) => {
     console.log(`📥 ${response.status} ${response.config.url}`);
@@ -38,38 +43,54 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error("❌ Response Error:", error);
-    
+
     let message = "Something went wrong.";
-    
+    let shouldLogout = false;
+
     if (error.response) {
-      // Server responded with error status
       console.error("Status:", error.response.status);
       console.error("Data:", error.response.data);
-      
-      if (error.response.status === 404) {
+
+      const status = error.response.status;
+
+      if (status === 401) {
+        message = "Session expired. Please login again.";
+        shouldLogout = true; // ✅ token invalid/expired → force login
+      } else if (status === 403) {
+        message =
+          error.response.data?.error ||
+          error.response.data?.message ||
+          "Access forbidden. Your account role does not permit this action.";
+      } else if (status === 404) {
         message = `API endpoint not found: ${error.response.config?.url}`;
-      } else if (error.response.status === 500) {
+      } else if (status === 500) {
         message = "Server error. Please check the backend logs.";
-      } else if (error.response.status === 403) {
-        message = "Access forbidden. Please check your permissions.";
-      } else if (error.response.status === 401) {
-        message = "Unauthorized. Please login again.";
       } else {
-        message = error.response.data?.message || 
-                  error.response.data?.error || 
-                  error.response.statusText || 
-                  "Server error";
+        message =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          error.response.statusText ||
+          "Server error";
       }
     } else if (error.request) {
-      // No response received
       console.error("No response received:", error.request);
       message = "Cannot connect to the server. Please check if the backend is running.";
     } else {
-      // Request setup error
       console.error("Request setup error:", error.message);
       message = error.message;
     }
-    
+
+    // ✅ FIX: Force logout on 401 and redirect to login
+    if (shouldLogout) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("roleId");
+      // avoid redirect loop when we're already on the login page
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/bustracking/login";
+      }
+    }
+
     console.error("Error Message:", message);
     return Promise.reject(new Error(message));
   }

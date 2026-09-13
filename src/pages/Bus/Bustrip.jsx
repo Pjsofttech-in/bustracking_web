@@ -53,6 +53,14 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ClearIcon from "@mui/icons-material/Clear";
 import { styled } from "@mui/material/styles";
 
+// ================= HELPERS =================
+// ✅ FIX: normalize "YYYY-MM-DDTHH:mm" (from datetime-local) → "YYYY-MM-DDTHH:mm:00"
+// Jackson cannot parse the 16-char format into LocalDateTime, which caused 400s.
+const toLocalDateTime = (v) => {
+  if (!v) return null;
+  return v.length === 16 ? `${v}:00` : v;
+};
+
 // ================= STYLED COMPONENTS =================
 const PageContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -299,12 +307,12 @@ export default function BusTrip() {
         driverApi.getAllDrivers().catch(() => []),
         conductorApi.getAllConductors().catch(() => [])
       ]);
-      const sortedTrips = sortByIdDesc(tripsData);
+      const sortedTrips = sortByIdDesc(Array.isArray(tripsData) ? tripsData : []);
       setTrips(sortedTrips);
-      setBuses(busesData);
-      setRoutes(routesData);
-      setDrivers(driversData);
-      setConductors(conductorsData);
+      setBuses(Array.isArray(busesData) ? busesData : []);
+      setRoutes(Array.isArray(routesData) ? routesData : []);
+      setDrivers(Array.isArray(driversData) ? driversData : []);
+      setConductors(Array.isArray(conductorsData) ? conductorsData : []);
     } catch (error) {
       console.error("Error loading data:", error);
       showSnackbar("Failed to load data", "error");
@@ -346,6 +354,7 @@ export default function BusTrip() {
     setBusFilter(null);
   };
 
+  // ================= SUBMIT =================
   const handleSubmit = async () => {
     if (!formData.busId || !formData.routeId || !formData.driverId ||
         !formData.conductorId || !formData.startTime || !formData.tripStatus) {
@@ -355,13 +364,14 @@ export default function BusTrip() {
 
     setSubmitting(true);
     try {
+      // ✅ FIX: normalize datetime-local value + safely handle null IDs
       const payload = {
         busId: Number(formData.busId),
         routeId: Number(formData.routeId),
-        driverId: Number(formData.driverId),
-        conductorId: Number(formData.conductorId),
-        startTime: formData.startTime,
-        endTime: formData.endTime || null,
+        driverId: formData.driverId ? Number(formData.driverId) : null,
+        conductorId: formData.conductorId ? Number(formData.conductorId) : null,
+        startTime: toLocalDateTime(formData.startTime),
+        endTime: toLocalDateTime(formData.endTime),
         tripStatus: formData.tripStatus,
       };
 
@@ -428,7 +438,7 @@ export default function BusTrip() {
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'SCHEDULED': return { bg: '#dbeafe', color: '#6495ED' };
       case 'ONGOING': return { bg: '#dcfce7', color: '#16a34a' };
       case 'COMPLETED': return { bg: '#fef3c7', color: '#d97706' };

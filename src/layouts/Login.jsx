@@ -381,15 +381,25 @@ export default function Login() {
 
       const { token, role, roleId } = response.data;
 
+      // ✅ FIX: persist token & role
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("roleId", roleId);
 
+      // ✅ FIX: apply token to axios default headers immediately
       setAuthToken(token);
+
+      // ✅ Optional debug — remove after verifying
+      console.log("[LOGIN] role from backend:", role, "roleId:", roleId);
 
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.error || "Invalid credentials. Please try again.");
+      console.error("Login error:", err);
+      setError(
+        err.response?.data?.error ||
+          err.message ||
+          "Invalid credentials. Please try again."
+      );
     } finally {
       setLoading(false);
     }
