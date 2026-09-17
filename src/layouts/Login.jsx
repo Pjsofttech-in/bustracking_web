@@ -1,3 +1,4 @@
+// src/layouts/Login.jsx
 import React, { useState } from "react";
 import {
   Box,
@@ -360,11 +361,21 @@ export default function Login() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    // Clear any previous error as the user retypes
     setError("");
   };
 
+  // ─────────────────────────────────────────────────────────────
+  //  handleSubmit — FIXED
+  //  • Clears stale token before attempting login so the JWT
+  //    filter on the backend never sees a bad Authorization header.
+  //  • Uses the REAL backend error message (e.g. "Invalid credentials")
+  //    instead of the interceptor's generic "Session expired".
+  //  • Does NOT redirect on failure.
+  // ─────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!formData.username || !formData.password) {
       setError("Please fill in all fields");
       return;
@@ -374,32 +385,49 @@ export default function Login() {
     setError("");
 
     try {
+      // ✅ FIX #1: Wipe any stale token before login
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("roleId");
+      setAuthToken(null);
+
       const response = await login({
-        username: formData.username,
+        username: formData.username.trim(),
         password: formData.password,
       });
 
       const { token, role, roleId } = response.data;
 
-      // ✅ FIX: persist token & role
+      if (!token) {
+        throw new Error("Server did not return a token");
+      }
+
+      // ✅ Persist session
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("roleId", roleId);
 
-      // ✅ FIX: apply token to axios default headers immediately
+      // ✅ Apply token to axios default headers immediately
       setAuthToken(token);
 
-      // ✅ Optional debug — remove after verifying
-      console.log("[LOGIN] role from backend:", role, "roleId:", roleId);
+      // Optional debug
+      console.log("[LOGIN] success — role:", role, "roleId:", roleId);
 
-      navigate("/dashboard");
+      // ✅ Navigate to dashboard (basename handled by BrowserRouter)
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       console.error("Login error:", err);
-      setError(
-        err.response?.data?.error ||
-          err.message ||
-          "Invalid credentials. Please try again."
-      );
+
+      // ✅ FIX #2: `err.message` now contains the backend's real message
+      // ("Invalid credentials", "Username not found", etc.) thanks to
+      // the updated axios interceptor.
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Invalid credentials. Please try again.";
+
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -462,9 +490,13 @@ export default function Login() {
           Sign in to continue to your Bus Tracking account.
         </Typography>
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }} noValidate>
           {error && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: "12px" }}>
+            <Alert
+              severity="error"
+              sx={{ mb: 2, borderRadius: "12px" }}
+              onClose={() => setError("")}
+            >
               {error}
             </Alert>
           )}
@@ -473,6 +505,7 @@ export default function Login() {
             fullWidth
             label="Email or Username"
             name="username"
+            autoComplete="username"
             value={formData.username}
             onChange={handleChange}
             disabled={loading}
@@ -491,6 +524,7 @@ export default function Login() {
             label="Password"
             name="password"
             type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
             value={formData.password}
             onChange={handleChange}
             disabled={loading}
@@ -507,6 +541,7 @@ export default function Login() {
                     edge="end"
                     disabled={loading}
                     size="small"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
@@ -533,7 +568,11 @@ export default function Login() {
               label="Remember me"
               sx={{ "& .MuiTypography-root": { fontSize: "0.8rem", color: "#64748B" } }}
             />
-            <Link href="#" variant="body2" sx={{ color: "#F59A3D", fontWeight: 500, fontSize: "0.8rem" }}>
+            <Link
+              href="#"
+              variant="body2"
+              sx={{ color: "#F59A3D", fontWeight: 500, fontSize: "0.8rem" }}
+            >
               Forgot Password?
             </Link>
           </Box>

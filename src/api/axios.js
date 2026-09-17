@@ -1,7 +1,7 @@
 // src/api/axios.js
 import axios from "axios";
 
-// const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://pjsofttech.com/bustracking";
+// ✅ FIX: Use env var, fall back to local dev
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:9090";
 
 const api = axios.create({
@@ -12,20 +12,28 @@ const api = axios.create({
   },
 });
 
-// ✅ FIX: Request interceptor — always attach token from localStorage
+// ✅ Request interceptor — attach token from localStorage
 api.interceptors.request.use(
   (config) => {
-    // ✅ Safety net: if setAuthToken was never called (page refresh),
-    // pull the token straight from localStorage.
     const token = localStorage.getItem("token");
-    if (token && !config.headers.Authorization) {
+    const url = config.url || "";
+
+    // ✅ FIX: Never send a stale Authorization header to auth endpoints.
+    // Login/register must be anonymous requests.
+    const isAuthEndpoint =
+      url.includes("/api/auth/login") || url.includes("/api/auth/register");
+
+    if (token && !isAuthEndpoint && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    console.log(`📤 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
-    if (config.data) {
-      console.log("Request Data:", config.data);
+    // Strip any leftover Authorization on auth endpoints (safety net)
+    if (isAuthEndpoint && config.headers.Authorization) {
+      delete config.headers.Authorization;
     }
+
+    console.log(`📤 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    if (config.data) console.log("Request Data:", config.data);
     return config;
   },
   (error) => {
@@ -34,7 +42,7 @@ api.interceptors.request.use(
   }
 );
 
-// ✅ FIX: Response interceptor with proper 401/403 handling
+// ✅ Response interceptor — smarter error handling
 api.interceptors.response.use(
   (response) => {
     console.log(`📥 ${response.status} ${response.config.url}`);
@@ -47,19 +55,32 @@ api.interceptors.response.use(
     let message = "Something went wrong.";
     let shouldLogout = false;
 
-    if (error.response) {
-      console.error("Status:", error.response.status);
-      console.error("Data:", error.response.data);
+    // ✅ FIX: Detect auth endpoints so we don't treat login 401 as "session expired"
+    const url = error.config?.url || "";
+    const isAuthEndpoint =
+      url.includes("/api/auth/login") || url.includes("/api/auth/register");
 
+    if (error.response) {
       const status = error.response.status;
+      const data = error.response.data || {};
+
+      console.error("Status:", status);
+      console.error("Data:", data);
 
       if (status === 401) {
-        message = "Session expired. Please login again.";
-        shouldLogout = true; // ✅ token invalid/expired → force login
+        if (isAuthEndpoint) {
+          // ✅ Login/register failure → use the REAL backend error message
+          message = data.error || data.message || "Invalid credentials";
+          shouldLogout = false; // do NOT wipe storage or redirect
+        } else {
+          // ✅ Genuine expired/invalid token on a protected route
+          message = "Session expired. Please login again.";
+          shouldLogout = true;
+        }
       } else if (status === 403) {
         message =
-          error.response.data?.error ||
-          error.response.data?.message ||
+          data.error ||
+          data.message ||
           "Access forbidden. Your account role does not permit this action.";
       } else if (status === 404) {
         message = `API endpoint not found: ${error.response.config?.url}`;
@@ -67,32 +88,40 @@ api.interceptors.response.use(
         message = "Server error. Please check the backend logs.";
       } else {
         message =
-          error.response.data?.message ||
-          error.response.data?.error ||
+          data.message ||
+          data.error ||
           error.response.statusText ||
           "Server error";
       }
     } else if (error.request) {
       console.error("No response received:", error.request);
-      message = "Cannot connect to the server. Please check if the backend is running.";
+      message =
+        "Cannot connect to the server. Please check if the backend is running.";
     } else {
       console.error("Request setup error:", error.message);
       message = error.message;
     }
 
-    // ✅ FIX: Force logout on 401 and redirect to login
+    // ✅ Only force logout for genuine 401s on protected routes
     if (shouldLogout) {
       localStorage.removeItem("token");
       localStorage.removeItem("role");
       localStorage.removeItem("roleId");
-      // avoid redirect loop when we're already on the login page
+
+      // ✅ FIX: keep redirect path consistent with vite base (`/bus-api/`)
+      const loginPath = "/bus-api/login";
       if (!window.location.pathname.includes("/login")) {
-        window.location.href = "/bustracking/login";
+        window.location.href = loginPath;
       }
     }
 
     console.error("Error Message:", message);
-    return Promise.reject(new Error(message));
+
+    // ✅ Preserve original response on the rejected error
+    const err = new Error(message);
+    err.response = error.response;
+    err.status = error.response?.status;
+    return Promise.reject(err);
   }
 );
 

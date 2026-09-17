@@ -23,9 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# .gitignore
+# ✅ Ignore local env files (keep .env.production for deployment)
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
+!.env.production
