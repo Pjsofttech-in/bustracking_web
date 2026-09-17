@@ -30,24 +30,18 @@ import { login, setAuthToken } from "../api/authApi";
 
 // ================= ANIMATIONS =================
 const fadeInUp = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
 `;
 
 const floatCloud = keyframes`
-  0% { transform: translateX(0); }
-  50% { transform: translateX(20px); }
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(20px); }
   100% { transform: translateX(0); }
 `;
 
 const driveBus = keyframes`
-  0% { transform: translateX(-10px); }
+  0%   { transform: translateX(-10px); }
   100% { transform: translateX(10px); }
 `;
 
@@ -67,10 +61,8 @@ const LoginContainer = styled(Box)(({ theme }) => ({
 
 const BackgroundLayer = styled(Box)({
   position: "absolute",
-  top: 0,
-  left: 0,
-  width: "100%",
-  height: "100%",
+  top: 0, left: 0,
+  width: "100%", height: "100%",
   zIndex: 0,
   pointerEvents: "none",
   overflow: "hidden",
@@ -92,156 +84,101 @@ const Cloud = styled(Box)(({ top, left, size, duration }) => ({
     backgroundColor: "rgba(255,255,255,0.9)",
     borderRadius: "50%",
   },
-  "&::before": {
-    top: "-30%",
-    left: "10%",
-    width: "60%",
-    height: "70%",
-  },
-  "&::after": {
-    top: "-20%",
-    right: "10%",
-    width: "40%",
-    height: "60%",
-  },
-  "@media (max-width: 480px)": {
-    display: "none",
-  },
+  "&::before": { top: "-30%", left: "10%", width: "60%", height: "70%" },
+  "&::after":  { top: "-20%", right: "10%", width: "40%", height: "60%" },
+  "@media (max-width: 480px)": { display: "none" },
 }));
 
 const GrassStrip = styled(Box)({
   position: "absolute",
-  bottom: 70,
-  left: 0,
-  width: "100%",
-  height: 30,
+  bottom: 70, left: 0,
+  width: "100%", height: 30,
   backgroundColor: "#65BE45",
   zIndex: 1,
   "&::before": {
     content: '""',
     position: "absolute",
-    top: -8,
-    left: 0,
-    width: "100%",
-    height: 16,
+    top: -8, left: 0,
+    width: "100%", height: 16,
     background:
       "radial-gradient(ellipse at 20% 0%, #65BE45 0%, transparent 70%), radial-gradient(ellipse at 80% 0%, #65BE45 0%, transparent 70%)",
     backgroundSize: "40px 16px, 60px 16px",
     backgroundRepeat: "repeat-x",
   },
-  "@media (max-width: 480px)": {
-    height: 20,
-    bottom: 50,
-  },
+  "@media (max-width: 480px)": { height: 20, bottom: 50 },
 });
 
 const Road = styled(Box)({
   position: "absolute",
-  bottom: 0,
-  left: 0,
-  width: "100%",
-  height: 70,
+  bottom: 0, left: 0,
+  width: "100%", height: 70,
   backgroundColor: "#292D32",
   zIndex: 1,
   "&::after": {
     content: '""',
     position: "absolute",
-    top: "50%",
-    left: 0,
-    width: "100%",
-    height: 4,
+    top: "50%", left: 0,
+    width: "100%", height: 4,
     background:
       "repeating-linear-gradient(to right, white 0px, white 30px, transparent 30px, transparent 50px)",
     transform: "translateY(-50%)",
   },
-  "@media (max-width: 480px)": {
-    height: 50,
-  },
+  "@media (max-width: 480px)": { height: 50 },
 });
 
 const BusWrapper = styled(Box)({
   position: "absolute",
-  bottom: 90,
-  left: "15%",
+  bottom: 90, left: "15%",
   zIndex: 2,
   animation: `${driveBus} 3s ease-in-out infinite alternate`,
-  transform: "translateX(0)",
-  "@media (max-width: 600px)": {
-    bottom: 70,
-    left: "10%",
-  },
-  "@media (max-width: 480px)": {
-    bottom: 55,
-    left: "5%",
-  },
+  "@media (max-width: 600px)": { bottom: 70, left: "10%" },
+  "@media (max-width: 480px)": { bottom: 55, left: "5%" },
 });
 
 const BusSVG = styled("svg")({
-  width: 140,
-  height: 80,
+  width: 140, height: 80,
   filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.2))",
-  "@media (max-width: 600px)": {
-    width: 100,
-    height: 60,
-  },
-  "@media (max-width: 480px)": {
-    width: 70,
-    height: 45,
-  },
+  "@media (max-width: 600px)": { width: 100, height: 60 },
+  "@media (max-width: 480px)": { width: 70, height: 45 },
 });
 
 const Header = styled(Box)(({ theme }) => ({
   position: "absolute",
-  top: 0,
-  left: 0,
+  top: 0, left: 0,
   width: "100%",
   padding: theme.spacing(2, 4),
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
   zIndex: 10,
-  [theme.breakpoints.down("sm")]: {
-    padding: theme.spacing(1.5, 2),
-  },
+  [theme.breakpoints.down("sm")]: { padding: theme.spacing(1.5, 2) },
 }));
 
-const LogoWrapper = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-});
+const LogoWrapper = styled(Box)({ display: "flex", alignItems: "center", gap: 8 });
 
 const LogoIcon = styled(Box)(({ theme }) => ({
-  width: 36,
-  height: 36,
+  width: 36, height: 36,
   borderRadius: "50%",
   background: "linear-gradient(135deg, #F59A3D, #E8852B)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   color: "white",
-  [theme.breakpoints.down("sm")]: {
-    width: 28,
-    height: 28,
-  },
+  [theme.breakpoints.down("sm")]: { width: 28, height: 28 },
 }));
 
 const LogoText = styled(Typography)(({ theme }) => ({
   fontWeight: 700,
   color: "#5A3424",
   fontSize: "1.2rem",
-  [theme.breakpoints.down("sm")]: {
-    fontSize: "1rem",
-  },
+  [theme.breakpoints.down("sm")]: { fontSize: "1rem" },
 }));
 
 const NavLinks = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: theme.spacing(2),
-  [theme.breakpoints.down("sm")]: {
-    gap: theme.spacing(1),
-  },
+  [theme.breakpoints.down("sm")]: { gap: theme.spacing(1) },
 }));
 
 const NavLink = styled(Link)(({ theme }) => ({
@@ -252,12 +189,8 @@ const NavLink = styled(Link)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: 4,
-  "&:hover": {
-    color: "#F59A3D",
-  },
-  [theme.breakpoints.down("sm")]: {
-    fontSize: "0.75rem",
-  },
+  "&:hover": { color: "#F59A3D" },
+  [theme.breakpoints.down("sm")]: { fontSize: "0.75rem" },
 }));
 
 const LoginCard = styled(Paper)(({ theme }) => ({
@@ -290,10 +223,7 @@ const Badge = styled(Box)(({ theme }) => ({
   display: "inline-block",
   marginBottom: theme.spacing(1),
   border: "1px solid #FCD34D",
-  [theme.breakpoints.down("sm")]: {
-    fontSize: "0.55rem",
-    padding: "2px 10px",
-  },
+  [theme.breakpoints.down("sm")]: { fontSize: "0.55rem", padding: "2px 10px" },
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -301,24 +231,15 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     borderRadius: "14px",
     backgroundColor: "#F8FAFC",
-    "&:hover fieldset": {
-      borderColor: "#F59A3D",
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "#F59A3D",
-      borderWidth: "2px",
-    },
+    "&:hover fieldset": { borderColor: "#F59A3D" },
+    "&.Mui-focused fieldset": { borderColor: "#F59A3D", borderWidth: "2px" },
   },
   "& .MuiInputLabel-root": {
     color: "#64748B",
     fontSize: "0.85rem",
-    "&.Mui-focused": {
-      color: "#F59A3D",
-    },
+    "&.Mui-focused": { color: "#F59A3D" },
   },
-  "& .MuiInputBase-input": {
-    padding: "12px 14px",
-  },
+  "& .MuiInputBase-input": { padding: "12px 14px" },
 }));
 
 const LoginButton = styled(Button)(({ theme }) => ({
@@ -335,11 +256,7 @@ const LoginButton = styled(Button)(({ theme }) => ({
     boxShadow: "0 6px 24px rgba(245,154,61,0.4)",
     transform: "translateY(-2px)",
   },
-  "&:disabled": {
-    background: "#CBD5E1",
-    boxShadow: "none",
-    transform: "none",
-  },
+  "&:disabled": { background: "#CBD5E1", boxShadow: "none", transform: "none" },
   marginTop: theme.spacing(0.5),
 }));
 
@@ -361,17 +278,14 @@ export default function Login() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-    // Clear any previous error as the user retypes
     setError("");
   };
 
   // ─────────────────────────────────────────────────────────────
   //  handleSubmit — FIXED
-  //  • Clears stale token before attempting login so the JWT
-  //    filter on the backend never sees a bad Authorization header.
-  //  • Uses the REAL backend error message (e.g. "Invalid credentials")
-  //    instead of the interceptor's generic "Session expired".
-  //  • Does NOT redirect on failure.
+  //  • Clears stale token before login (no bad Authorization header)
+  //  • Uses the REAL backend error message ("Invalid credentials")
+  //  • Does NOT redirect on failure
   // ─────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -385,7 +299,7 @@ export default function Login() {
     setError("");
 
     try {
-      // ✅ FIX #1: Wipe any stale token before login
+      // ✅ FIX #1: wipe stale session before hitting /login
       localStorage.removeItem("token");
       localStorage.removeItem("role");
       localStorage.removeItem("roleId");
@@ -402,25 +316,19 @@ export default function Login() {
         throw new Error("Server did not return a token");
       }
 
-      // ✅ Persist session
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("roleId", roleId);
 
-      // ✅ Apply token to axios default headers immediately
       setAuthToken(token);
 
-      // Optional debug
       console.log("[LOGIN] success — role:", role, "roleId:", roleId);
 
-      // ✅ Navigate to dashboard (basename handled by BrowserRouter)
       navigate("/dashboard", { replace: true });
     } catch (err) {
       console.error("Login error:", err);
 
-      // ✅ FIX #2: `err.message` now contains the backend's real message
-      // ("Invalid credentials", "Username not found", etc.) thanks to
-      // the updated axios interceptor.
+      // ✅ FIX #2: real backend message instead of "Session expired"
       const msg =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
