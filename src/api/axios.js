@@ -14,15 +14,12 @@ const api = axios.create({
 
 // ============================================================
 //  REQUEST INTERCEPTOR
-//  • Attaches JWT from localStorage for protected routes.
-//  • Never sends Authorization to /api/auth/login or /register.
 // ============================================================
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     const url = config.url || "";
 
-    // ✅ Auth endpoints must be anonymous
     const isAuthEndpoint =
       url.includes("/api/auth/login") || url.includes("/api/auth/register");
 
@@ -30,7 +27,6 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Safety net: strip any leftover Authorization on auth endpoints
     if (isAuthEndpoint && config.headers.Authorization) {
       delete config.headers.Authorization;
     }
@@ -47,10 +43,6 @@ api.interceptors.request.use(
 
 // ============================================================
 //  RESPONSE INTERCEPTOR
-//  • 401 on /api/auth/login  → surface the REAL backend message
-//                              (e.g. "Invalid credentials"), do NOT redirect.
-//  • 401 on any other route  → "Session expired", clear token & redirect.
-//  • 403 / 404 / 500         → mapped friendly messages.
 // ============================================================
 api.interceptors.response.use(
   (response) => {
@@ -64,7 +56,6 @@ api.interceptors.response.use(
     let message = "Something went wrong.";
     let shouldLogout = false;
 
-    // ✅ Detect auth endpoints so login 401s are NOT treated as "session expired"
     const url = error.config?.url || "";
     const isAuthEndpoint =
       url.includes("/api/auth/login") || url.includes("/api/auth/register");
@@ -78,11 +69,9 @@ api.interceptors.response.use(
 
       if (status === 401) {
         if (isAuthEndpoint) {
-          // ✅ Login/register failure → show the REAL backend error
           message = data.error || data.message || "Invalid credentials";
-          shouldLogout = false; // do NOT clear storage or redirect
+          shouldLogout = false;
         } else {
-          // ✅ Genuine expired/invalid token on a protected route
           message = "Session expired. Please login again.";
           shouldLogout = true;
         }
@@ -111,14 +100,13 @@ api.interceptors.response.use(
       message = error.message;
     }
 
-    // ✅ Only force logout for genuine 401s on protected routes
     if (shouldLogout) {
       localStorage.removeItem("token");
       localStorage.removeItem("role");
       localStorage.removeItem("roleId");
 
-      // Redirect path must match the SPA basename
-      const loginPath = "/bus-api/login";
+      // ✅ FIX: match the SPA basename (/bustracking)
+      const loginPath = "/bustracking/login";
       if (!window.location.pathname.includes("/login")) {
         window.location.href = loginPath;
       }
@@ -126,7 +114,6 @@ api.interceptors.response.use(
 
     console.error("Error Message:", message);
 
-    // Preserve original response on the rejected error
     const err = new Error(message);
     err.response = error.response;
     err.status = error.response?.status;
