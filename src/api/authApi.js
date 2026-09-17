@@ -12,16 +12,12 @@ export const register = async (userData) => {
 };
 
 export const logout = async () => {
-  // Backend endpoint just returns 200 (stateless JWT)
   try {
     const response = await api.post("/api/auth/logout");
     return response;
-  } finally {
-    // Always clear local state, even if the server call fails
-    setAuthToken(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("roleId");
+  } catch (err) {
+    // Logout is best-effort — JWT is stateless on the server.
+    return { data: { message: "Logged out locally" } };
   }
 };
 

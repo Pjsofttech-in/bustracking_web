@@ -1,41 +1,17 @@
+// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
-
-  base: mode === 'production' ? '/bus-api/' : '/',
-
-  server: {
-    port: 5173,
-  },
-
+  base: mode === 'production' ? '/bustracking/' : '/',
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('@mui') || id.includes('@emotion')) {
-              return 'vendor-mui';
-            }
-
-            if (id.includes('leaflet') || id.includes('react-leaflet')) {
-              return 'vendor-maps';
-            }
-
-            if (id.includes('axios') || id.includes('react-router')) {
-              return 'vendor-core';
-            }
-
-            return 'vendor';
-          }
-        },
-      },
-    },
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    chunkSizeWarningLimit: 1500,
+    // no rollupOptions.output.manualChunks — let Rolldown decide
   },
-
-  chunkSizeWarningLimit: 1000,
-  sourcemap: false,
-  minify: 'esbuild',
-  target: 'es2020',
+  server: { port: 5173, host: true },
+  preview: { port: 4173, host: true },
 }));

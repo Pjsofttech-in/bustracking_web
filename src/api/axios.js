@@ -1,27 +1,30 @@
 // src/api/axios.js
 import axios from "axios";
 
-// ✅ Use env var, fall back to local dev
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:9090";
+// ─── Base URL resolution ─────────────────────────────────────────────────
+// Prefer the env var, strip trailing slashes so `${BASE_URL}${url}` is clean.
+const RAW_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:9090";
+const BASE_URL = RAW_BASE.replace(/\/+$/, "");
 
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 30000,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
-// ============================================================
-//  REQUEST INTERCEPTOR
-// ============================================================
+// ─── Helpers ─────────────────────────────────────────────────────────────
+const STATIC_ASSET_RE = /\.(js|mjs|css|png|jpe?g|gif|svg|ico|woff2?|ttf|eot|map|webp|avif)(\?.*)?$/i;
+
+// ─── REQUEST INTERCEPTOR ─────────────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     const url = config.url || "";
 
     const isAuthEndpoint =
-      url.includes("/api/auth/login") || url.includes("/api/auth/register");
+      url.includes("/api/auth/login") ||
+      url.includes("/api/auth/register");
 
     if (token && !isAuthEndpoint && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -31,8 +34,10 @@ api.interceptors.request.use(
       delete config.headers.Authorization;
     }
 
-    console.log(`📤 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
-    if (config.data) console.log("Request Data:", config.data);
+    if (import.meta.env.DEV) {
+      console.log(`📤 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+      if (config.data) console.log("Request Data:", config.data);
+    }
     return config;
   },
   (error) => {
@@ -41,13 +46,13 @@ api.interceptors.request.use(
   }
 );
 
-// ============================================================
-//  RESPONSE INTERCEPTOR
-// ============================================================
+// ─── RESPONSE INTERCEPTOR ────────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => {
-    console.log(`📥 ${response.status} ${response.config.url}`);
-    console.log("Response Data:", response.data);
+    if (import.meta.env.DEV) {
+      console.log(`📥 ${response.status} ${response.config.url}`);
+      console.log("Response Data:", response.data);
+    }
     return response;
   },
   (error) => {
@@ -58,18 +63,27 @@ api.interceptors.response.use(
 
     const url = error.config?.url || "";
     const isAuthEndpoint =
-      url.includes("/api/auth/login") || url.includes("/api/auth/register");
+      url.includes("/api/auth/login") ||
+      url.includes("/api/auth/register");
+    const isAssetRequest = STATIC_ASSET_RE.test(url);
 
     if (error.response) {
       const status = error.response.status;
       const data = error.response.data || {};
 
-      console.error("Status:", status);
-      console.error("Data:", data);
+      if (import.meta.env.DEV) {
+        console.error("Status:", status);
+        console.error("Data:", data);
+      }
 
       if (status === 401) {
         if (isAuthEndpoint) {
           message = data.error || data.message || "Invalid credentials";
+          shouldLogout = false;
+        } else if (isAssetRequest) {
+          // Never log out the user because a JS/CSS asset 401'd.
+          // This usually means a base-path / nginx misconfig.
+          message = "Static resource unauthorized (check nginx base path)";
           shouldLogout = false;
         } else {
           message = "Session expired. Please login again.";
@@ -92,11 +106,9 @@ api.interceptors.response.use(
           "Server error";
       }
     } else if (error.request) {
-      console.error("No response received:", error.request);
       message =
         "Cannot connect to the server. Please check if the backend is running.";
     } else {
-      console.error("Request setup error:", error.message);
       message = error.message;
     }
 
@@ -105,14 +117,15 @@ api.interceptors.response.use(
       localStorage.removeItem("role");
       localStorage.removeItem("roleId");
 
-      // ✅ FIX: match the SPA basename (/bustracking)
-      const loginPath = "/bustracking/login";
+      // Match the SPA basename (/bustracking)
+      const loginPath = `${
+        import.meta.env.VITE_APP_BASE_PATH || "/bustracking"
+      }/login`.replace(/\/{2,}/g, "/");
+
       if (!window.location.pathname.includes("/login")) {
         window.location.href = loginPath;
       }
     }
-
-    console.error("Error Message:", message);
 
     const err = new Error(message);
     err.response = error.response;

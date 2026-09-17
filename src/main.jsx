@@ -12,10 +12,13 @@ if (token) {
   setAuthToken(token);
 }
 
-// ✅ FIX: Match the production mount path served by nginx
-//    Production URL is: https://shrishahuprabodhini.in/bustracking/…
+// ✅ Basename matches the nginx mount and vite.config.js `base`
+//    production → "/bustracking"
+//    dev        → "/"
 const basename =
-  import.meta.env.MODE === 'production' ? '/bustracking' : '/';
+  import.meta.env.MODE === 'production'
+    ? (import.meta.env.VITE_APP_BASE_PATH || '/bustracking')
+    : '/';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter basename={basename}>
