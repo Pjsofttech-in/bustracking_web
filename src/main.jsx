@@ -12,9 +12,10 @@ if (token) {
   setAuthToken(token);
 }
 
-// ✅ FIX: Match the production mount path (nginx serves the SPA under /bus-api/)
+// ✅ FIX: Match the production mount path served by nginx
+//    Production URL is: https://shrishahuprabodhini.in/bustracking/…
 const basename =
-  import.meta.env.MODE === 'production' ? '/bus-api' : '/';
+  import.meta.env.MODE === 'production' ? '/bustracking' : '/';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter basename={basename}>
