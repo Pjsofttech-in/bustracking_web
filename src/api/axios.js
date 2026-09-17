@@ -1,7 +1,7 @@
 // src/api/axios.js
 import axios from "axios";
 
-// ✅ FIX: Use env var, fall back to local dev
+// ✅ Use env var, fall back to local dev
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:9090";
 
 const api = axios.create({
@@ -12,14 +12,17 @@ const api = axios.create({
   },
 });
 
-// ✅ Request interceptor — attach token from localStorage
+// ============================================================
+//  REQUEST INTERCEPTOR
+//  • Attaches JWT from localStorage for protected routes.
+//  • Never sends Authorization to /api/auth/login or /register.
+// ============================================================
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     const url = config.url || "";
 
-    // ✅ FIX: Never send a stale Authorization header to auth endpoints.
-    // Login/register must be anonymous requests.
+    // ✅ Auth endpoints must be anonymous
     const isAuthEndpoint =
       url.includes("/api/auth/login") || url.includes("/api/auth/register");
 
@@ -27,7 +30,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Strip any leftover Authorization on auth endpoints (safety net)
+    // Safety net: strip any leftover Authorization on auth endpoints
     if (isAuthEndpoint && config.headers.Authorization) {
       delete config.headers.Authorization;
     }
@@ -42,7 +45,13 @@ api.interceptors.request.use(
   }
 );
 
-// ✅ Response interceptor — smarter error handling
+// ============================================================
+//  RESPONSE INTERCEPTOR
+//  • 401 on /api/auth/login  → surface the REAL backend message
+//                              (e.g. "Invalid credentials"), do NOT redirect.
+//  • 401 on any other route  → "Session expired", clear token & redirect.
+//  • 403 / 404 / 500         → mapped friendly messages.
+// ============================================================
 api.interceptors.response.use(
   (response) => {
     console.log(`📥 ${response.status} ${response.config.url}`);
@@ -55,7 +64,7 @@ api.interceptors.response.use(
     let message = "Something went wrong.";
     let shouldLogout = false;
 
-    // ✅ FIX: Detect auth endpoints so we don't treat login 401 as "session expired"
+    // ✅ Detect auth endpoints so login 401s are NOT treated as "session expired"
     const url = error.config?.url || "";
     const isAuthEndpoint =
       url.includes("/api/auth/login") || url.includes("/api/auth/register");
@@ -69,9 +78,9 @@ api.interceptors.response.use(
 
       if (status === 401) {
         if (isAuthEndpoint) {
-          // ✅ Login/register failure → use the REAL backend error message
+          // ✅ Login/register failure → show the REAL backend error
           message = data.error || data.message || "Invalid credentials";
-          shouldLogout = false; // do NOT wipe storage or redirect
+          shouldLogout = false; // do NOT clear storage or redirect
         } else {
           // ✅ Genuine expired/invalid token on a protected route
           message = "Session expired. Please login again.";
@@ -108,7 +117,7 @@ api.interceptors.response.use(
       localStorage.removeItem("role");
       localStorage.removeItem("roleId");
 
-      // ✅ FIX: keep redirect path consistent with vite base (`/bus-api/`)
+      // Redirect path must match the SPA basename
       const loginPath = "/bus-api/login";
       if (!window.location.pathname.includes("/login")) {
         window.location.href = loginPath;
@@ -117,7 +126,7 @@ api.interceptors.response.use(
 
     console.error("Error Message:", message);
 
-    // ✅ Preserve original response on the rejected error
+    // Preserve original response on the rejected error
     const err = new Error(message);
     err.response = error.response;
     err.status = error.response?.status;
