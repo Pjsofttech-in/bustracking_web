@@ -1,17 +1,29 @@
-// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+
+  // Production URL:
+  // https://shrishahuprabodhini.in/bustracking/
   base: mode === 'production' ? '/bustracking/' : '/',
+
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
     chunkSizeWarningLimit: 1500,
-    // no rollupOptions.output.manualChunks — let Rolldown decide
+
+    // Let Vite/Rolldown handle chunking automatically.
   },
-  server: { port: 5173, host: true },
-  preview: { port: 4173, host: true },
+
+  server: {
+    host: true,
+    port: 5173,
+  },
+
+  preview: {
+    host: true,
+    port: 4173,
+  },
 }));
